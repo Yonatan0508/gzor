@@ -52,7 +52,7 @@ button:disabled{opacity:.4;cursor:default}
 @media (max-width:420px){.top .lbl{display:none}.top .btn{padding:0 10px}}
 
 .panel{background:var(--surface);border-top:1px solid var(--line);padding-block:10px 12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:10px}
-.modes{display:grid;grid-template-columns:repeat(3,1fr);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.modes{display:grid;grid-template-columns:repeat(2,1fr);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
 .modes button{border:0;border-radius:9px;min-height:42px;padding:0 6px;font-size:14px;gap:5px}
 .wand-actions{display:flex;gap:8px}
 .wand-actions .primary{flex:1}
@@ -60,8 +60,9 @@ button:disabled{opacity:.4;cursor:default}
 .seg{display:inline-grid;grid-auto-flow:column;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:2px;gap:2px}
 .seg button{border:0;min-height:36px;border-radius:8px;padding:0 12px;font-size:14px}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
-#opAdd[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
-#opSub[aria-pressed="true"]{background:var(--danger);color:var(--surface)}
+.seg.tools{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-flow:row}
+.seg.tools button{padding:0 4px}
+#tErase[aria-pressed="true"]{background:var(--danger);color:var(--surface)}
 .modes button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 .hint{color:var(--muted);font-size:14px;line-height:1.4;margin:0}
 .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -122,13 +123,9 @@ input[type=range]{width:100%;accent-color:var(--accent);height:28px}
 
   <section class="panel">
     <div class="modes">
-      <button id="mCut" aria-pressed="true">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></svg>
-        הקפה
-      </button>
-      <button id="mWand" aria-pressed="false">
+      <button id="mWand" aria-pressed="true">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 12-12M14 4v2M18 4l-1.5 1.5M20 10h-2M18 14l-1.5-1.5M14 8l2 2"/></svg>
-        הקשה חכמה
+        בחירה
       </button>
       <button id="mMove" aria-pressed="false">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/></svg>
@@ -137,19 +134,19 @@ input[type=range]{width:100%;accent-color:var(--accent);height:28px}
     </div>
 
     <div id="wandOpts" hidden style="display:grid;gap:8px">
-      <div class="wand-tools">
-        <div class="seg" role="group" aria-label="כלי">
-          <button id="tTap" aria-pressed="true">הקשה</button>
-          <button id="tBrush" aria-pressed="false">מברשת</button>
-        </div>
-        <div class="seg" role="group" aria-label="פעולה">
-          <button id="opAdd" aria-pressed="true">+ הוספה</button>
-          <button id="opSub" aria-pressed="false">− הסרה</button>
-        </div>
+      <div class="seg tools" role="group" aria-label="כלי בחירה">
+        <button id="tTap" aria-pressed="true">הקשה</button>
+        <button id="tLasso" aria-pressed="false">הקפה</button>
+        <button id="tBrush" aria-pressed="false">מברשת</button>
+        <button id="tErase" aria-pressed="false">מחק</button>
       </div>
       <p class="hint" id="wandHint">הקישו על האובייקט. כל הקשה נוספת מוסיפה עוד חלק לבחירה.</p>
       <div class="slider" id="tolRow"><label for="tol">רגישות</label><input id="tol" type="range" min="4" max="90" value="30" dir="ltr"><output id="tolOut">30</output></div>
-      <div class="slider" id="brushRow" hidden><label for="bsz">מברשת</label><input id="bsz" type="range" min="6" max="70" value="22" dir="ltr"><output id="bszOut">22</output></div>
+      <div class="slider" id="brushRow" hidden><label for="bsz">גודל</label><input id="bsz" type="range" min="6" max="70" value="22" dir="ltr"><output id="bszOut">22</output></div>
+      <div class="row">
+        <label class="toggle" id="smartRow" hidden><input id="smartLasso" type="checkbox" checked> זיהוי גבולות חכם</label>
+        <label class="toggle" id="fillRow"><input id="fill" type="checkbox" checked> למלא את המקום שנגזר</label>
+      </div>
       <div class="wand-actions">
         <button id="wCut" class="primary" disabled>גזור את הבחירה</button>
         <button id="wUndo" class="icon-btn" aria-label="ביטול הסימון האחרון" title="ביטול הסימון האחרון" disabled>
@@ -157,11 +154,6 @@ input[type=range]{width:100%;accent-color:var(--accent);height:28px}
         </button>
         <button id="wClear" disabled>ניקוי</button>
       </div>
-    </div>
-
-    <div id="cutOpts" class="row">
-      <p class="hint">הקיפו באצבע את האובייקט שרוצים לגזור, מקצה לקצה.</p>
-      <label class="toggle"><input id="fill" type="checkbox" checked> למלא את המקום שנגזר</label>
     </div>
 
     <p id="moveHint" class="hint" hidden>הקישו על אובייקט שגזרתם כדי לבחור אותו. שתי אצבעות על הרקע מגדילות את התצוגה.</p>
@@ -196,7 +188,7 @@ const MAX_SIDE = 2048;
 
 let base = null;          // canvas of the background photo (replaced, never mutated, so undo is cheap)
 let objects = [];         // cut-out pieces
-let sel = null, mode = 'cut', nextId = 1;
+let sel = null, mode = 'wand', nextId = 1;
 let view = { s: 1, ox: 0, oy: 0 }, W = 0, H = 0, dpr = 1;
 let undoStack = [], lasso = null, gesture = null;
 const pointers = new Map();
@@ -354,8 +346,141 @@ function area(pts) { let a = 0; for (let i = 0, j = pts.length - 1; i < pts.leng
 
 function finishLasso() {
   const pts = lasso; lasso = null;
-  if (!pts || pts.length < 8 || area(pts) < 150) { toast('הקיפו אזור גדול יותר כדי לגזור'); draw(); return; }
-  makeCut(pts);
+  if (!pts || pts.length < 8 || area(pts) * view.s * view.s < 400) { toast('הקיפו אזור גדול יותר'); draw(); return; }
+  if (!wand || wand.base !== base) wandPrep();
+  let m, how;
+  if ($('smartLasso').checked) {
+    const r = smartLasso(pts); m = r.m; how = r.how;
+  } else { m = polyMask(pts.map(p => ({ x: p.x * wand.k, y: p.y * wand.k }))); how = 'plain'; }
+  wand.seeds.push({ m, add: true });
+  wandRebuild();
+  toast(how === 'ai' ? 'ה-AI זיהה את האובייקט. אפשר לתקן עם מברשת או מחק'
+    : how === 'color' ? 'זוהו גבולות האובייקט. אפשר לתקן עם מברשת או מחק'
+    : how === 'fallback' ? 'לא זוהו גבולות ברורים, נבחר כל האזור שהקפתם'
+    : 'האזור נבחר. לחצו "גזור את הבחירה"');
+}
+
+/* ---------- smart lasso: find the object's real edges inside the drawn loop ---------- */
+function alphaMask(c) {
+  const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, m = new Uint8Array(c.width * c.height);
+  for (let i = 0; i < m.length; i++) m[i] = d[i * 4 + 3] > 127 ? 1 : 0;
+  return m;
+}
+function polyMask(P, strokeW) {
+  const c = mk(wand.sw, wand.sh), g = c.getContext('2d');
+  g.fillStyle = g.strokeStyle = '#fff'; g.lineJoin = 'round';
+  polyPath(g, P);
+  if (strokeW) { g.lineWidth = strokeW; g.stroke(); } else g.fill();
+  return alphaMask(c);
+}
+function countOf(m) { let n = 0; for (let i = 0; i < m.length; i++) n += m[i]; return n; }
+// keep the biggest connected piece and any piece at least 15% of its size
+function keepMain(m, sw, sh) {
+  const lab = new Int32Array(m.length), q = new Int32Array(m.length), sizes = [0];
+  for (let s = 0; s < m.length; s++) {
+    if (!m[s] || lab[s]) continue;
+    const id = sizes.length; let h = 0, t = 0, n = 0; q[t++] = s; lab[s] = id;
+    while (h < t) {
+      const p = q[h++], x = p % sw; n++;
+      const nb = [x > 0 ? p - 1 : -1, x < sw - 1 ? p + 1 : -1, p - sw, p + sw];
+      for (const v of nb) if (v >= 0 && v < m.length && m[v] && !lab[v]) { lab[v] = id; q[t++] = v; }
+    }
+    sizes.push(n);
+  }
+  const big = Math.max(0, ...sizes), out = new Uint8Array(m.length);
+  for (let i = 0; i < m.length; i++) if (lab[i] && sizes[lab[i]] >= big * .15) out[i] = 1;
+  return out;
+}
+// anything the outside can't reach is a hole in the object: fill it
+function fillHoles(m, sw, sh) {
+  const out = new Uint8Array(m.length), q = new Int32Array(m.length); let h = 0, t = 0;
+  const push = p => { if (!m[p] && !out[p]) { out[p] = 1; q[t++] = p; } };
+  for (let x = 0; x < sw; x++) { push(x); push((sh - 1) * sw + x); }
+  for (let y = 0; y < sh; y++) { push(y * sw); push(y * sw + sw - 1); }
+  while (h < t) {
+    const p = q[h++], x = p % sw;
+    if (x > 0) push(p - 1); if (x < sw - 1) push(p + 1); if (p >= sw) push(p - sw); if (p < m.length - sw) push(p + sw);
+  }
+  for (let i = 0; i < m.length; i++) out[i] = out[i] ? 0 : 1;
+  return out;
+}
+// smooth ragged edges: blur the mask a little and threshold it again
+function smoothMask(m, sw, sh, r) {
+  const c = mk(sw, sh), g = c.getContext('2d'), id = g.createImageData(sw, sh);
+  for (let i = 0; i < m.length; i++) id.data[i * 4 + 3] = m[i] ? 255 : 0;
+  g.putImageData(id, 0, 0);
+  const c2 = mk(sw, sh), g2 = c2.getContext('2d'); g2.filter = `blur(${r}px)`; g2.drawImage(c, 0, 0);
+  return alphaMask(c2);
+}
+function colorSegment(inside, band) {
+  const { px, sw, sh } = wand, hf = new Float32Array(4096), hb = new Float32Array(4096);
+  let nf = 0, nb = 0;
+  const bin = j => ((px[j] >> 4) << 8) | ((px[j + 1] >> 4) << 4) | (px[j + 2] >> 4);
+  for (let i = 0; i < inside.length; i++) {
+    if (band[i] && !inside[i]) { hb[bin(i * 4)]++; nb++; }
+    else if (inside[i] && !band[i]) { hf[bin(i * 4)]++; nf++; }
+  }
+  if (nf < 30 || nb < 30) return null;
+  // spread each histogram a little so near colors count too
+  const blur3 = h => { const o = new Float32Array(4096);
+    for (let r = 0; r < 16; r++) for (let g = 0; g < 16; g++) for (let b = 0; b < 16; b++) {
+      let s = 0; for (let dr = -1; dr <= 1; dr++) for (let dg = -1; dg <= 1; dg++) for (let db = -1; db <= 1; db++) {
+        const R = r + dr, G = g + dg, B = b + db; if (R < 0 || G < 0 || B < 0 || R > 15 || G > 15 || B > 15) continue;
+        s += h[(R << 8) | (G << 4) | B] * (dr || dg || db ? .35 : 1);
+      } o[(r << 8) | (g << 4) | b] = s; }
+    return o; };
+  const F = blur3(hf), Bk = blur3(hb), out = new Uint8Array(inside.length);
+  for (let i = 0; i < inside.length; i++) {
+    if (!inside[i]) continue;
+    const b = bin(i * 4), pf = F[b] / nf, pb = Bk[b] / nb;
+    out[i] = pf > pb * 4 ? 1 : 0; // colours common inside the loop and rare just outside it
+  }
+  return out;
+}
+function aiInLoop(colorM, inside, outer) {
+  const { sw, sh } = wand; let acc = new Uint8Array(inside.length), used = 0;
+  let target = colorM || inside;
+  for (let tries = 0; tries < 3; tries++) {
+    // tap where the not-yet-covered part of the object is thickest (its centre)
+    let sx = 0, sy = 0, n = 0;
+    for (let i = 0; i < target.length; i++) if (target[i] && !acc[i]) { sx += i % sw; sy += (i / sw) | 0; n++; }
+    if (n < target.length * .0005 + 20) break;
+    let cx = Math.round(sx / n), cy = Math.round(sy / n);
+    if (!(target[cy * sw + cx] && !acc[cy * sw + cx])) {
+      let best = 1e18;
+      for (let i = 0; i < target.length; i++) if (target[i] && !acc[i]) {
+        const d = (i % sw - cx) ** 2 + (((i / sw) | 0) - cy) ** 2; if (d < best) { best = d; var bi = i; }
+      }
+      cx = bi % sw; cy = (bi / sw) | 0;
+    }
+    let m = null; try { m = aiMask(cx, cy); } catch (e) { console.warn(e); }
+    if (!m) break;
+    let tot = 0, inn = 0;
+    for (let i = 0; i < m.length; i++) if (m[i]) { tot++; if (outer[i]) inn++; }
+    if (tot && inn / tot > .75) { for (let i = 0; i < m.length; i++) if (m[i] && outer[i]) acc[i] = 1; used++; }
+    else break;
+    const covered = countOf(target.map((v, i) => v && acc[i]));
+    if (covered > countOf(target) * .8) break;
+  }
+  return used ? acc : null;
+}
+function smartLasso(pts) {
+  const { sw, sh, k } = wand, P = pts.map(p => ({ x: p.x * k, y: p.y * k }));
+  const inside = polyMask(P);
+  const nIn = countOf(inside);
+  const r = Math.max(3, Math.round(Math.sqrt(nIn) * .07));
+  const band = polyMask(P, r * 2);
+  const outer = inside.map((v, i) => v || band[i]); // the loop plus a little slack past the line
+  let colorM = colorSegment(inside, band);
+  if (colorM) colorM = fillHoles(keepMain(smoothMask(colorM, sw, sh, 1.5), sw, sh), sw, sh);
+  const colorN = colorM ? countOf(colorM) : 0;
+  const colorOk = colorM && colorN > nIn * .06 && colorN < nIn * .97;
+  if (ai.state === 'ready') {
+    const a = aiInLoop(colorOk ? colorM : null, inside, outer);
+    if (a && countOf(a) > nIn * .04) return { m: fillHoles(a, sw, sh), how: 'ai' };
+  }
+  if (colorOk) return { m: colorM, how: 'color' };
+  return { m: inside, how: 'fallback' };
 }
 
 function makeCut(pts) {
@@ -547,17 +672,17 @@ function wandTap(ip) {
     let m = null;
     try { m = aiMask(sx, sy); } catch (e) { console.warn(e); }
     if (!m) { toast('לא זוהה אובייקט. נסו להקיש במקום אחר'); return; }
-    wand.seeds.push({ m, add: wandAdd });
-  } else wand.seeds.push({ p: [sx, sy], add: wandAdd });
+    wand.seeds.push({ m, add: true });
+  } else wand.seeds.push({ p: [sx, sy], add: true });
   const frac = wandRebuild();
-  if (wandAdd && frac > .6) toast('הבחירה תפסה את רוב התמונה. עברו ל"הסרה" והקישו על מה שמיותר');
-  else if (wand.seeds.length === 1) toast('נבחר. אפשר להוסיף או להסיר אזורים, ואז "גזור את הבחירה"');
+  if (frac > .6) toast('הבחירה תפסה את רוב התמונה. הורידו את הרגישות או מחקו את המיותר עם המחק');
+  else if (wand.seeds.length === 1) toast('נבחר. אפשר לתקן עם מברשת או מחק, ואז "גזור את הבחירה"');
 }
 function wandClear() { if (wand) { wand.seeds = []; wandRebuild(); } }
 function wandUndo() { if (wand && wand.seeds.length) { wand.seeds.pop(); wandRebuild(); } }
 
 /* brush: paint extra areas into the selection, or erase them out of it */
-let wandTool = 'tap', wandAdd = true;
+let wandTool = 'tap';
 function brushStart(ip) {
   if (!wand || wand.base !== base) wandPrep();
   const sc = mk(wand.sw, wand.sh), g = sc.getContext('2d');
@@ -565,7 +690,7 @@ function brushStart(ip) {
   g.lineCap = g.lineJoin = 'round'; g.lineWidth = r * 2; g.strokeStyle = g.fillStyle = '#fff';
   const p = { x: ip.x * wand.k, y: ip.y * wand.k };
   g.beginPath(); g.arc(p.x, p.y, r, 0, 7); g.fill();
-  return { type: 'brush', sc, g, last: p, pts: [ip], add: wandAdd };
+  return { type: 'brush', sc, g, last: p, pts: [ip], add: wandTool !== 'erase' };
 }
 function brushMove(ip) {
   const p = { x: ip.x * wand.k, y: ip.y * wand.k }, g = gesture.g;
@@ -580,12 +705,8 @@ function brushEnd(gs) {
 }
 function setWandTool(t) {
   wandTool = t;
-  $('tTap').setAttribute('aria-pressed', t === 'tap'); $('tBrush').setAttribute('aria-pressed', t === 'brush');
-  updateUI();
-}
-function setWandOp(add) {
-  wandAdd = add;
-  $('opAdd').setAttribute('aria-pressed', add); $('opSub').setAttribute('aria-pressed', !add);
+  for (const [id, v] of [['tTap', 'tap'], ['tLasso', 'lasso'], ['tBrush', 'brush'], ['tErase', 'erase']])
+    $(id).setAttribute('aria-pressed', t === v);
   updateUI();
 }
 function wandCut() {
@@ -639,8 +760,8 @@ cv.addEventListener('pointerdown', e => {
   const sp = pos(e); pointers.set(e.pointerId, sp);
   if (pointers.size === 1) {
     const ip = toImg(sp);
-    if (mode === 'cut') { lasso = [ip]; gesture = { type: 'lasso' }; }
-    else if (mode === 'wand' && wandTool === 'brush') { gesture = brushStart(ip); }
+    if (mode === 'wand' && wandTool === 'lasso') { lasso = [ip]; gesture = { type: 'lasso' }; }
+    else if (mode === 'wand' && (wandTool === 'brush' || wandTool === 'erase')) { gesture = brushStart(ip); }
     else if (mode === 'wand') { gesture = { type: 'pan', tap: true, p0: sp, o0: { x: view.ox, y: view.oy } }; }
     else if (onHandle(sp)) {
       gesture = { type: 'handle', c: { x: sel.cx, y: sel.cy }, d0: dist(ip, { x: sel.cx, y: sel.cy }), a0: ang({ x: sel.cx, y: sel.cy }, ip), s0: sel.scale, r0: sel.rot };
@@ -733,7 +854,7 @@ cv.addEventListener('wheel', e => {
 /* ---------- UI ---------- */
 function setMode(m) {
   mode = m; lasso = null;
-  $('mCut').setAttribute('aria-pressed', m === 'cut'); $('mMove').setAttribute('aria-pressed', m === 'move');
+  $('mMove').setAttribute('aria-pressed', m === 'move');
   $('mWand').setAttribute('aria-pressed', m === 'wand');
   updateUI(); draw();
 }
@@ -746,17 +867,19 @@ function updateSliders() {
 }
 function updateUI() {
   const showObj = mode === 'move' && !!sel;
-  $('cutOpts').hidden = mode === 'move';
-  $('cutOpts').querySelector('.hint').hidden = mode !== 'cut';
   $('wandOpts').hidden = mode !== 'wand';
   $('wandOpts').style.display = mode === 'wand' ? 'grid' : '';
-  $('tolRow').hidden = ai.state === 'ready' || ai.state === 'loading' || wandTool === 'brush';
-  $('brushRow').hidden = wandTool !== 'brush';
-  $('fill').closest('label').hidden = !!donor;
-  $('wandHint').textContent = wandTool === 'brush'
-    ? (wandAdd ? 'מרחו באצבע על אזור כדי להוסיף אותו לבחירה.' : 'מרחו באצבע על אזור כדי להסיר אותו מהבחירה.')
+  $('tolRow').hidden = wandTool !== 'tap' || ai.state === 'ready' || ai.state === 'loading';
+  $('brushRow').hidden = wandTool !== 'brush' && wandTool !== 'erase';
+  $('smartRow').hidden = wandTool !== 'lasso';
+  $('fillRow').hidden = !!donor;
+  $('wandHint').textContent =
+      wandTool === 'brush' ? 'מרחו באצבע על אזור כדי להוסיף אותו לבחירה.'
+    : wandTool === 'erase' ? 'מרחו באצבע על מה שסימנתם כדי למחוק אותו מהבחירה.'
+    : wandTool === 'lasso' ? ($('smartLasso').checked
+        ? 'הקיפו את האובייקט בערך, והאפליקציה תמצא את הגבולות המדויקים שלו.'
+        : 'הקיפו באצבע את האזור שרוצים לבחור, מקצה לקצה.')
     : ai.state === 'loading' ? 'טוען את זיהוי ה-AI…'
-    : !wandAdd ? 'הקישו על חלק מיותר כדי להסיר אותו מהבחירה.'
     : ai.state === 'ready' ? 'הקישו על האובייקט וה-AI יזהה את הגבולות שלו. הקשה נוספת מוסיפה עוד אובייקט.'
     : 'הקישו על האובייקט. כל הקשה נוספת מוסיפה עוד חלק לבחירה.';
   $('moveHint').hidden = !(mode === 'move' && !sel);
@@ -765,18 +888,18 @@ function updateUI() {
   if (sel) { $('objNum').textContent = objects.indexOf(sel) + 1 + ' מתוך ' + objects.length; updateSliders(); }
 }
 
-$('mCut').onclick = () => setMode('cut');
 $('mWand').onclick = () => setMode('wand');
 $('wCut').onclick = wandCut;
 $('wClear').onclick = wandClear;
 $('wUndo').onclick = wandUndo;
 $('tTap').onclick = () => setWandTool('tap');
+$('tLasso').onclick = () => setWandTool('lasso');
 $('tBrush').onclick = () => setWandTool('brush');
-$('opAdd').onclick = () => setWandOp(true);
-$('opSub').onclick = () => setWandOp(false);
+$('tErase').onclick = () => setWandTool('erase');
+$('smartLasso').addEventListener('change', updateUI);
 $('bsz').addEventListener('input', () => { $('bszOut').textContent = $('bsz').value; });
 $('tol').addEventListener('input', () => { $('tolOut').textContent = $('tol').value; if (wand && wand.seeds.length) wandRebuild(); });
-$('mMove').onclick = () => { setMode('move'); if (!objects.length) toast('עוד לא גזרתם כלום. עברו ל"חיתוך" והקיפו אובייקט'); };
+$('mMove').onclick = () => { setMode('move'); if (!objects.length) toast('עוד לא גזרתם כלום. עברו ל"בחירה" ובחרו אובייקט'); };
 $('fit').onclick = () => { fit(); draw(); };
 $('undo').onclick = undo;
 
@@ -806,7 +929,7 @@ $('aDel').onclick = () => { if (!sel) return; pushUndo(); objects = objects.filt
 function loadCanvas(c) {
   base = c; objects = []; sel = null; undoStack = []; wand = null; $('undo').disabled = true;
   $('wCut').disabled = $('wClear').disabled = $('wUndo').disabled = true;
-  setMode(NATIVE ? 'wand' : 'cut');
+  setMode('wand');
   if (W > 0 && H > 0) { fit(); fitted = true; } else fitted = false;
   draw();
 }
@@ -825,7 +948,7 @@ function readImage(input, cb) {
 $('file').addEventListener('change', e => readImage(e.target, c => {
   if (donor) donorRestore();
   loadCanvas(c);
-  toast(NATIVE ? 'התמונה נטענה. הקישו על אובייקט כדי לבחור אותו' : 'התמונה נטענה. הקיפו אובייקט כדי לגזור אותו');
+  toast('התמונה נטענה. בחרו אובייקט בהקשה או בהקפה');
 }));
 
 /* ---------- add an object from another photo ---------- */
@@ -837,8 +960,8 @@ $('addFile').addEventListener('change', e => readImage(e.target, c => {
   $('undo').disabled = true; $('save').disabled = true;
   $('wCut').disabled = $('wClear').disabled = $('wUndo').disabled = true;
   $('donorBar').hidden = false; $('toast').classList.add('low');
-  fit(); setMode(mode === 'cut' ? 'cut' : 'wand');
-  toast(mode === 'cut' ? 'הקיפו את האובייקט שרוצים להוסיף' : 'הקישו על האובייקט שרוצים להוסיף');
+  fit(); setMode('wand');
+  toast(wandTool === 'lasso' ? 'הקיפו את האובייקט שרוצים להוסיף' : 'בחרו את האובייקט שרוצים להוסיף');
 }));
 function donorRestore() {
   ({ base, objects, undoStack, sel, wand } = donor);
@@ -893,10 +1016,11 @@ $('shareBtn').onclick = async () => {
 };
 if (NATIVE) aiInit();
 
+window.__gzState = () => ({ view: { ...view }, count: wand ? wand.count : 0, k: wand ? wand.k : 0, objects: objects.length });
 new ResizeObserver(resize).observe(stage);
 loadCanvas(sample());
 resize();
 toast(NATIVE ? 'תמונה לדוגמה. הקישו על הכדור או העץ, או בחרו תמונה משלכם'
-  : 'תמונה לדוגמה. הקיפו את הכדור או העץ כדי לגזור, או בחרו תמונה משלכם', 4200);
+  : 'תמונה לדוגמה. הקישו על הכדור, או בחרו "הקפה" והקיפו את העץ', 4200);
 })();
 </script>
