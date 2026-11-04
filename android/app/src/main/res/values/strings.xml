@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">גזור והזז</string>
+    <string name="title_activity_main">גזור והזז</string>
+    <string name="package_name">com.commandoFox.gzor</string>
+    <string name="custom_url_scheme">com.commandoFox.gzor</string>
+</resources>

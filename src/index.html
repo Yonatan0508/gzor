@@ -1,0 +1,752 @@
+<title>גזור והזז</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Secular+One&display=swap">
+<style>
+/* Layout: one-screen tool. Top bar, a cutting-mat stage that holds the photo, a bottom control tray. */
+:root{
+  --bg:#EEF1EC; --surface:#FFFFFF; --ink:#16201B; --muted:#5A6A62; --line:#D2DBD4;
+  --accent:#D8461B; --accent-ink:#FFFFFF; --mat:#2D5A4C; --mat-line:rgba(255,255,255,.07); --mat-major:rgba(255,255,255,.14);
+  --danger:#B42318;
+  --f-display:"Secular One","Assistant",system-ui,sans-serif;
+  --f-body:"Assistant",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1412; --surface:#17201C; --ink:#E6EDE8; --muted:#93A39A; --line:#2A3530;
+  --accent:#FF6A3D; --accent-ink:#1A0D07; --mat:#1C3A31; --mat-line:rgba(255,255,255,.05); --mat-major:rgba(255,255,255,.1);
+  --danger:#FF7A6B; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0E1412; --surface:#17201C; --ink:#E6EDE8; --muted:#93A39A; --line:#2A3530;
+  --accent:#FF6A3D; --accent-ink:#1A0D07; --mat:#1C3A31; --mat-line:rgba(255,255,255,.05); --mat-major:rgba(255,255,255,.1);
+  --danger:#FF7A6B; color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;overflow:hidden;-webkit-tap-highlight-color:transparent}
+.app{height:100%;display:grid;grid-template-rows:auto 1fr auto}
+.top{display:flex;align-items:center;gap:8px;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{font-family:var(--f-display);font-size:22px;line-height:1;margin-inline-end:auto;display:flex;align-items:center;gap:8px}
+.brand svg{color:var(--accent)}
+button,.btn{font:inherit;font-weight:600;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:10px;min-height:40px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;white-space:nowrap}
+button:focus-visible,.btn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+button:disabled{opacity:.4;cursor:default}
+.btn.primary,button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.icon-btn{width:40px;padding:0}
+.btn input{position:absolute;width:1px;height:1px;opacity:0}
+.btn{position:relative}
+
+.stage{position:relative;min-height:0;overflow:hidden;background-color:var(--mat);
+  background-image:
+    linear-gradient(var(--mat-major) 1px,transparent 1px),linear-gradient(90deg,var(--mat-major) 1px,transparent 1px),
+    linear-gradient(var(--mat-line) 1px,transparent 1px),linear-gradient(90deg,var(--mat-line) 1px,transparent 1px);
+  background-size:120px 120px,120px 120px,24px 24px,24px 24px;background-position:-1px -1px}
+#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.fab{position:absolute;bottom:12px;left:max(12px,env(safe-area-inset-left,0px));background:rgba(0,0,0,.35);color:#fff;border-color:rgba(255,255,255,.25);backdrop-filter:blur(6px);width:40px;padding:0}
+.toast{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(10,16,14,.82);color:#fff;padding:8px 14px;border-radius:999px;font-weight:600;font-size:14px;max-width:calc(100% - 32px);text-align:center;pointer-events:none;transition:opacity .25s}
+.toast.off{opacity:0}
+
+.panel{background:var(--surface);border-top:1px solid var(--line);padding-block:10px 12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:10px}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.modes button{border:0;border-radius:9px;min-height:42px;padding:0 6px;font-size:14px;gap:5px}
+.wand-actions{display:flex;gap:8px}
+.wand-actions .primary{flex:1}
+.modes button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.hint{color:var(--muted);font-size:14px;line-height:1.4;margin:0}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.toggle{display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;user-select:none}
+.toggle input{width:20px;height:20px;accent-color:var(--accent)}
+.meta{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.meta b{color:var(--ink);font-weight:700}
+.slider{display:grid;grid-template-columns:52px 1fr 52px;align-items:center;gap:8px;font-size:14px;font-weight:600}
+.slider output{text-align:start;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent);height:28px}
+.actions{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.actions button{flex-direction:column;gap:2px;min-height:52px;padding:4px 2px;font-size:12px;border-radius:10px}
+.actions button.danger{color:var(--danger)}
+
+.sheet{position:fixed;inset:0;background:rgba(6,10,9,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));z-index:20;color:#fff;text-align:center}
+.sheet img{max-width:100%;max-height:70vh;border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.5);-webkit-touch-callout:default;user-select:auto}
+.sheet p{margin:0;font-size:15px;line-height:1.5;max-width:36ch}
+.sheet button{color:#fff;border-color:rgba(255,255,255,.35)}
+@media (prefers-reduced-motion: reduce){.toast{transition:none}}
+</style>
+
+<div class="app" dir="rtl">
+  <header class="top">
+    <div class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></svg>
+      גזור והזז
+    </div>
+    <label class="btn" for="file">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
+      תמונה
+      <input id="file" type="file" accept="image/*">
+    </label>
+    <button id="undo" class="icon-btn" aria-label="ביטול פעולה" title="ביטול" disabled>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h-6a5 5 0 0 0 0 10h7"/><path d="m12 4 3 3-3 3"/></svg>
+    </button>
+    <button id="save" class="primary">שמירה</button>
+  </header>
+
+  <main class="stage" id="stage">
+    <canvas id="cv" aria-label="אזור עריכה"></canvas>
+    <button id="fit" class="fab" aria-label="התאמה למסך" title="התאמה למסך">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+    </button>
+    <div id="toast" class="toast off" role="status"></div>
+  </main>
+
+  <section class="panel">
+    <div class="modes">
+      <button id="mCut" aria-pressed="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></svg>
+        הקפה
+      </button>
+      <button id="mWand" aria-pressed="false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 12-12M14 4v2M18 4l-1.5 1.5M20 10h-2M18 14l-1.5-1.5M14 8l2 2"/></svg>
+        הקשה חכמה
+      </button>
+      <button id="mMove" aria-pressed="false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/></svg>
+        הזזה
+      </button>
+    </div>
+
+    <div id="wandOpts" hidden style="display:grid;gap:8px">
+      <p class="hint" id="wandHint">הקישו על האובייקט. כל הקשה נוספת מוסיפה עוד חלק לבחירה.</p>
+      <div class="slider" id="tolRow"><label for="tol">רגישות</label><input id="tol" type="range" min="4" max="90" value="30" dir="ltr"><output id="tolOut">30</output></div>
+      <div class="wand-actions">
+        <button id="wCut" class="primary" disabled>גזור את הבחירה</button>
+        <button id="wClear" disabled>ניקוי</button>
+      </div>
+    </div>
+
+    <div id="cutOpts" class="row">
+      <p class="hint">הקיפו באצבע את האובייקט שרוצים לגזור, מקצה לקצה.</p>
+      <label class="toggle"><input id="fill" type="checkbox" checked> למלא את המקום שנגזר</label>
+    </div>
+
+    <p id="moveHint" class="hint" hidden>הקישו על אובייקט שגזרתם כדי לבחור אותו. שתי אצבעות על הרקע מגדילות את התצוגה.</p>
+
+    <div id="objOpts" hidden style="display:grid;gap:8px">
+      <div class="meta"><span>אובייקט <b id="objNum">1</b></span><span id="objSize">0×0 פיקסלים</span></div>
+      <div class="slider"><label for="sz">גודל</label><input id="sz" type="range" min="10" max="400" value="100" dir="ltr"><output id="szOut">100%</output></div>
+      <div class="slider"><label for="rot">סיבוב</label><input id="rot" type="range" min="-180" max="180" value="0" dir="ltr"><output id="rotOut">0°</output></div>
+      <div class="actions">
+        <button id="aDup"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>שכפול</button>
+        <button id="aFlip"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3v18"/><path d="M8 7 3 17h5zM16 7l5 10h-5z"/></svg>היפוך</button>
+        <button id="aFront"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg>לחזית</button>
+        <button id="aReset"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v5h5"/></svg>איפוס</button>
+        <button id="aDel" class="danger"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>מחיקה</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="sheet" class="sheet" hidden dir="rtl">
+  <img id="outImg" alt="התמונה הסופית">
+  <p id="saveHint">לחיצה ארוכה על התמונה ואז "שמירה בתמונות" כדי לשמור אותה בטלפון.</p>
+  <button id="shareBtn" class="primary" hidden>שמירה או שיתוף</button>
+  <button id="closeSheet">חזרה לעריכה</button>
+</div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const stage = $('stage'), cv = $('cv'), ctx = cv.getContext('2d');
+const MAX_SIDE = 2048;
+
+let base = null;          // canvas of the background photo (replaced, never mutated, so undo is cheap)
+let objects = [];         // cut-out pieces
+let sel = null, mode = 'cut', nextId = 1;
+let view = { s: 1, ox: 0, oy: 0 }, W = 0, H = 0, dpr = 1;
+let undoStack = [], lasso = null, gesture = null;
+const pointers = new Map();
+
+/* ---------- helpers ---------- */
+const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+const toImg = p => ({ x: (p.x - view.ox) / view.s, y: (p.y - view.oy) / view.s });
+const toScr = p => ({ x: view.ox + p.x * view.s, y: view.oy + p.y * view.s });
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const ang = (a, b) => Math.atan2(b.y - a.y, b.x - a.x);
+const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+let raf = 0; const draw = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; render(); }); };
+
+let toastT = 0;
+function toast(msg, ms = 2600) {
+  const t = $('toast'); t.textContent = msg; t.classList.remove('off');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.add('off'), ms);
+}
+
+function localToWorld(o, lx, ly) {
+  const c = Math.cos(o.rot), s = Math.sin(o.rot);
+  lx *= o.scale * o.flip; ly *= o.scale;
+  return { x: o.cx + lx * c - ly * s, y: o.cy + lx * s + ly * c };
+}
+function worldToLocal(o, p) {
+  const dx = p.x - o.cx, dy = p.y - o.cy, c = Math.cos(-o.rot), s = Math.sin(-o.rot);
+  return { x: (dx * c - dy * s) / (o.scale * o.flip), y: (dx * s + dy * c) / o.scale };
+}
+
+/* ---------- sample photo so the tool opens ready to try ---------- */
+function sample() {
+  const w = 1200, h = 900, c = mk(w, h), g = c.getContext('2d');
+  let gr = g.createLinearGradient(0, 0, 0, h * .65); gr.addColorStop(0, '#7EC4EE'); gr.addColorStop(1, '#DDF0F7');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#FFD45A'; g.beginPath(); g.arc(960, 170, 80, 0, 7); g.fill();
+  g.fillStyle = 'rgba(255,255,255,.9)';
+  [[220,160,46],[270,140,60],[330,165,44],[620,110,36],[660,95,48],[710,115,34]].forEach(([x,y,r]) => { g.beginPath(); g.arc(x,y,r,0,7); g.fill(); });
+  g.fillStyle = '#7FB069'; g.beginPath(); g.moveTo(0, 560); g.quadraticCurveTo(300, 430, 620, 540); g.quadraticCurveTo(900, 470, 1200, 520); g.lineTo(1200, 900); g.lineTo(0, 900); g.fill();
+  g.fillStyle = '#5E9450'; g.beginPath(); g.moveTo(0, 680); g.quadraticCurveTo(500, 600, 1200, 690); g.lineTo(1200, 900); g.lineTo(0, 900); g.fill();
+  // house
+  g.fillStyle = '#F2E6D0'; g.fillRect(420, 420, 300, 230);
+  g.fillStyle = '#C0462D'; g.beginPath(); g.moveTo(395, 430); g.lineTo(570, 300); g.lineTo(745, 430); g.fill();
+  g.fillStyle = '#6B4226'; g.fillRect(540, 530, 70, 120);
+  g.fillStyle = '#8CC8E8'; g.fillRect(450, 470, 64, 56); g.fillRect(630, 470, 64, 56);
+  g.strokeStyle = '#F2E6D0'; g.lineWidth = 5; g.beginPath(); g.moveTo(482,470); g.lineTo(482,526); g.moveTo(450,498); g.lineTo(514,498); g.moveTo(662,470); g.lineTo(662,526); g.moveTo(630,498); g.lineTo(694,498); g.stroke();
+  // tree
+  g.fillStyle = '#7A5230'; g.fillRect(890, 470, 36, 170);
+  g.fillStyle = '#3F7D3A'; [[908,430,90],[850,470,64],[966,470,64],[908,370,62]].forEach(([x,y,r]) => { g.beginPath(); g.arc(x,y,r,0,7); g.fill(); });
+  g.fillStyle = '#E2463A'; [[870,420],[940,450],[905,360],[960,500]].forEach(([x,y]) => { g.beginPath(); g.arc(x,y,11,0,7); g.fill(); });
+  // ball
+  g.fillStyle = '#F7F7F7'; g.beginPath(); g.arc(230, 740, 62, 0, 7); g.fill();
+  g.fillStyle = '#2B6CB0'; g.beginPath(); g.arc(230, 740, 62, -.6, 1.2); g.lineTo(230, 740); g.fill();
+  g.fillStyle = '#E2463A'; g.beginPath(); g.arc(230, 740, 62, 2.2, 3.6); g.lineTo(230, 740); g.fill();
+  return c;
+}
+
+/* ---------- layout & render ---------- */
+function resize() {
+  const r = stage.getBoundingClientRect();
+  W = r.width; H = r.height; dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  fit(); draw();
+}
+function fit() {
+  if (!base) return;
+  const pad = 16, s = Math.min((W - pad * 2) / base.width, (H - pad * 2) / base.height);
+  view = { s, ox: (W - base.width * s) / 2, oy: (H - base.height * s) / 2 };
+}
+
+function drawObj(g, o) {
+  g.save(); g.translate(o.cx, o.cy); g.rotate(o.rot); g.scale(o.scale * o.flip, o.scale);
+  g.drawImage(o.cv, -o.w / 2, -o.h / 2); g.restore();
+}
+
+function render() {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  if (!base) return;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.save();
+  ctx.translate(view.ox, view.oy); ctx.scale(view.s, view.s);
+  ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 24 / view.s * view.s; ctx.shadowOffsetY = 6;
+  ctx.drawImage(base, 0, 0);
+  ctx.shadowColor = 'transparent';
+  ctx.beginPath(); ctx.rect(0, 0, base.width, base.height); ctx.clip();
+  for (const o of objects) {
+    if (o === sel && gesture && gesture.type !== 'pan' && gesture.type !== 'pinchView') {
+      ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8; drawObj(ctx, o); ctx.restore();
+    } else drawObj(ctx, o);
+  }
+  if (mode === 'wand' && wand && wand.base === base && wand.count) {
+    ctx.globalAlpha = .5; ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(wand.tint, 0, 0, base.width, base.height);
+    ctx.globalAlpha = 1; ctx.imageSmoothingEnabled = true;
+  }
+  ctx.restore();
+
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#D8461B';
+
+  if (sel && mode === 'move') {
+    const pts = [[-1,-1],[1,-1],[1,1],[-1,1]].map(([a,b]) => toScr(localToWorld(sel, a * sel.w / 2, b * sel.h / 2)));
+    ctx.save(); ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
+    ctx.strokeStyle = 'rgba(255,255,255,.95)';
+    ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath(); ctx.stroke();
+    ctx.strokeStyle = accent; ctx.lineDashOffset = 5; ctx.stroke();
+    ctx.setLineDash([]);
+    const hp = pts[2];
+    ctx.fillStyle = accent; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(hp.x, hp.y, 13, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(hp.x, hp.y, 5.5, .4, 5.4); ctx.stroke();
+    ctx.restore();
+  }
+
+  if (lasso && lasso.length > 1) {
+    ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.beginPath(); lasso.forEach((p, i) => { const s = toScr(p); i ? ctx.lineTo(s.x, s.y) : ctx.moveTo(s.x, s.y); });
+    ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.stroke();
+    ctx.lineWidth = 2.5; ctx.strokeStyle = accent; ctx.stroke();
+    const a = toScr(lasso[0]), b = toScr(lasso[lasso.length - 1]);
+    ctx.setLineDash([4, 6]); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,.8)';
+    ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(a.x, a.y); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle = accent; ctx.beginPath(); ctx.arc(a.x, a.y, 6, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+}
+
+/* ---------- undo ---------- */
+function pushUndo() {
+  undoStack.push({ base, objects: objects.map(o => ({ ...o })), selId: sel ? sel.id : null });
+  if (undoStack.length > 25) undoStack.shift();
+  $('undo').disabled = false;
+}
+function undo() {
+  const st = undoStack.pop(); if (!st) return;
+  base = st.base; objects = st.objects; sel = objects.find(o => o.id === st.selId) || null;
+  $('undo').disabled = !undoStack.length; updateUI(); draw();
+}
+
+/* ---------- cutting ---------- */
+function polyPath(g, pts) { g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)); g.closePath(); }
+function area(pts) { let a = 0; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) a += (pts[j].x + pts[i].x) * (pts[j].y - pts[i].y); return Math.abs(a / 2); }
+
+function finishLasso() {
+  const pts = lasso; lasso = null;
+  if (!pts || pts.length < 8 || area(pts) < 150) { toast('הקיפו אזור גדול יותר כדי לגזור'); draw(); return; }
+  makeCut(pts);
+}
+
+function makeCut(pts) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const p of pts) { x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y); }
+  const m = mk(base.width, base.height), mg = m.getContext('2d');
+  mg.fillStyle = '#fff'; polyPath(mg, pts); mg.fill();
+  cutWithMask(m, x0, y0, x1, y1);
+}
+
+/* mask: full-size canvas, opaque where the object is. Box is the object's bounds in image pixels. */
+function cutWithMask(mask, x0, y0, x1, y1) {
+  const BW = base.width, BH = base.height;
+  x0 = Math.max(0, Math.floor(x0)); y0 = Math.max(0, Math.floor(y0));
+  x1 = Math.min(BW, Math.ceil(x1)); y1 = Math.min(BH, Math.ceil(y1));
+  const w = x1 - x0, h = y1 - y0;
+  if (w < 4 || h < 4) { toast('בחרו אזור בתוך התמונה'); draw(); return false; }
+
+  pushUndo();
+  const oc = mk(w, h), og = oc.getContext('2d');
+  og.drawImage(base, -x0, -y0);
+  og.globalCompositeOperation = 'destination-in'; og.drawImage(mask, -x0, -y0);
+  const alpha = og.getImageData(0, 0, w, h).data;
+
+  if ($('fill').checked) {
+    // patch: average of the texture found one object-width away on each side
+    const offs = [[w + 4, 0], [-(w + 4), 0], [0, h + 4], [0, -(h + 4)]]
+      .filter(([dx, dy]) => x0 - dx >= 0 && x1 - dx <= BW && y0 - dy >= 0 && y1 - dy <= BH);
+    const patch = mk(BW, BH), pg = patch.getContext('2d');
+    if (offs.length) {
+      pg.globalCompositeOperation = 'lighter'; pg.globalAlpha = 1 / offs.length;
+      offs.forEach(([dx, dy]) => pg.drawImage(base, dx, dy));
+      pg.globalCompositeOperation = 'source-over'; pg.globalAlpha = 1;
+    } else { pg.fillStyle = edgeColor(alpha, w, h, x0, y0); pg.fillRect(0, 0, BW, BH); }
+    // grow the mask a few pixels so the object's rim doesn't ghost, then soften it
+    const grown = mk(BW, BH), gg = grown.getContext('2d');
+    for (const [dx, dy] of [[0,0],[4,0],[-4,0],[0,4],[0,-4],[3,3],[-3,-3],[3,-3],[-3,3]]) gg.drawImage(mask, dx, dy);
+    const soft = mk(BW, BH), sg = soft.getContext('2d');
+    sg.filter = 'blur(4px)'; sg.drawImage(grown, 0, 0); sg.filter = 'none';
+    const blurred = mk(BW, BH), bg = blurred.getContext('2d');
+    bg.filter = 'blur(5px)'; bg.drawImage(patch, 0, 0); bg.filter = 'none';
+    bg.globalCompositeOperation = 'destination-in'; bg.drawImage(soft, 0, 0);
+    const nb = mk(BW, BH), ng = nb.getContext('2d');
+    ng.drawImage(base, 0, 0); ng.drawImage(blurred, 0, 0);
+    base = nb;
+  }
+
+  const o = { id: nextId++, cv: oc, w, h, alpha, cx: x0 + w / 2, cy: y0 + h / 2, scale: 1, rot: 0, flip: 1 };
+  o.home = { cx: o.cx, cy: o.cy };
+  objects.push(o); sel = o;
+  setMode('move');
+  toast('נגזר! גררו כדי להזיז, צבטו בשתי אצבעות כדי להגדיל');
+  draw();
+  return true;
+}
+
+function edgeColor(alpha, w, h, x0, y0) {
+  const d = base.getContext('2d').getImageData(x0, y0, w, h).data; let r = 0, g = 0, b = 0, n = 0;
+  for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2) {
+    const i = (y * w + x) * 4; if (alpha[i + 3] > 20) continue;
+    r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
+  }
+  return n ? `rgb(${r / n | 0},${g / n | 0},${b / n | 0})` : '#888';
+}
+
+/* ---------- smart tap: grow a region from the tapped pixel by color similarity ---------- */
+const WAND_SIDE = 1024;
+let wand = null; // { k, sw, sh, px, img, seeds:[[x,y] | {m}], mask:Uint8Array, tint:canvas }
+function wandPrep() {
+  const k = Math.min(1, WAND_SIDE / Math.max(base.width, base.height));
+  const sw = Math.max(1, Math.round(base.width * k)), sh = Math.max(1, Math.round(base.height * k));
+  const img = mk(sw, sh); img.getContext('2d').drawImage(base, 0, 0, sw, sh);
+  const c = mk(sw, sh), g = c.getContext('2d');
+  g.filter = 'blur(1px)'; g.drawImage(base, 0, 0, sw, sh); g.filter = 'none';
+  wand = { k, sw, sh, base, img, px: g.getImageData(0, 0, sw, sh).data, seeds: [], mask: new Uint8Array(sw * sh), tint: mk(sw, sh) };
+}
+
+/* ---------- on-device AI (MediaPipe Interactive Segmenter), available inside the phone app ---------- */
+const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+const REMOTE_MODEL = 'https://storage.googleapis.com/mediapipe-models/interactive_segmenter/magic_touch/float32/1/magic_touch.tflite';
+const ai = { state: NATIVE ? 'idle' : 'off', seg: null };
+async function aiInit() {
+  if (ai.state !== 'idle') return;
+  ai.state = 'loading'; updateUI();
+  try {
+    const mp = await import('./mediapipe/vision_bundle.mjs');
+    const files = await mp.FilesetResolver.forVisionTasks('./mediapipe/wasm');
+    const make = path => mp.InteractiveSegmenter.createFromOptions(files, {
+      baseOptions: { modelAssetPath: path }, outputConfidenceMasks: true, outputCategoryMask: false });
+    try { ai.seg = await make('./models/magic_touch.tflite'); }
+    catch (e) { ai.seg = await make(REMOTE_MODEL); }
+    ai.state = 'ready';
+    if (mode === 'wand') toast('זיהוי AI מוכן. הקישו על אובייקט');
+  } catch (e) {
+    console.warn('AI unavailable', e); ai.state = 'failed';
+    toast('זיהוי ה-AI לא נטען, עוברים לבחירה לפי צבע');
+  }
+  updateUI();
+}
+function aiMask(sx, sy) {
+  const { sw, sh } = wand; let out = null;
+  ai.seg.segment(wand.img, { keypoint: { x: (sx + .5) / sw, y: (sy + .5) / sh } }, res => {
+    const m = res.confidenceMasks && res.confidenceMasks[0]; if (!m) return;
+    const f = m.getAsFloat32Array(), mw = m.width, mh = m.height;
+    const at = (x, y) => f[Math.min(mh - 1, (y * mh / sh) | 0) * mw + Math.min(mw - 1, (x * mw / sw) | 0)];
+    const high = at(sx, sy) >= .5; // whichever side the tapped pixel falls on is the object
+    out = new Uint8Array(sw * sh);
+    for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x++) { const v = at(x, y); out[y * sw + x] = high ? v >= .5 : v < .5; }
+  });
+  return out;
+}
+function wandGrow(sx, sy, tol) {
+  const { sw, sh, px } = wand, out = new Uint8Array(sw * sh);
+  let r = 0, g = 0, b = 0, n = 0;
+  for (let y = sy - 2; y <= sy + 2; y++) for (let x = sx - 2; x <= sx + 2; x++) {
+    if (x < 0 || y < 0 || x >= sw || y >= sh) continue;
+    const i = (y * sw + x) * 4; r += px[i]; g += px[i + 1]; b += px[i + 2]; n++;
+  }
+  r /= n; g /= n; b /= n;
+  const lim = (tol * 2.4) ** 2, local = (tol * 1.1) ** 2;
+  const q = new Int32Array(sw * sh); let head = 0, tail = 0;
+  const s0 = sy * sw + sx; out[s0] = 1; q[tail++] = s0;
+  let minx = sx, maxx = sx, miny = sy, maxy = sy;
+  while (head < tail) {
+    const p = q[head++], x = p % sw, y = (p / sw) | 0, i = p * 4;
+    const nb = [x > 0 ? p - 1 : -1, x < sw - 1 ? p + 1 : -1, y > 0 ? p - sw : -1, y < sh - 1 ? p + sw : -1];
+    for (const t of nb) {
+      if (t < 0 || out[t]) continue;
+      const j = t * 4;
+      const dr = px[j] - r, dg = px[j + 1] - g, db = px[j + 2] - b;
+      const er = px[j] - px[i], eg = px[j + 1] - px[i + 1], eb = px[j + 2] - px[i + 2];
+      // similar to the tapped color, and no sharp edge between neighbours
+      if (dr * dr * .3 + dg * dg * .59 + db * db * .11 < lim * .33 && er * er + eg * eg + eb * eb < local) {
+        out[t] = 1; q[tail++] = t;
+        const tx = t % sw, ty = (t / sw) | 0;
+        if (tx < minx) minx = tx; if (tx > maxx) maxx = tx; if (ty < miny) miny = ty; if (ty > maxy) maxy = ty;
+      }
+    }
+  }
+  // fill holes: anything inside the bounds that the outside can't reach belongs to the object
+  const bw = maxx - minx + 3, bh = maxy - miny + 3, ox = minx - 1, oy = miny - 1;
+  const seen = new Uint8Array(bw * bh); head = tail = 0;
+  const inReg = (x, y) => x >= 0 && y >= 0 && x < sw && y < sh && out[y * sw + x];
+  for (let x = 0; x < bw; x++) { for (const y of [0, bh - 1]) { const p = y * bw + x; if (!seen[p] && !inReg(x + ox, y + oy)) { seen[p] = 1; q[tail++] = p; } } }
+  for (let y = 0; y < bh; y++) { for (const x of [0, bw - 1]) { const p = y * bw + x; if (!seen[p] && !inReg(x + ox, y + oy)) { seen[p] = 1; q[tail++] = p; } } }
+  while (head < tail) {
+    const p = q[head++], x = p % bw, y = (p / bw) | 0;
+    for (const [nx, ny] of [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]) {
+      if (nx < 0 || ny < 0 || nx >= bw || ny >= bh) continue;
+      const t = ny * bw + nx; if (seen[t] || inReg(nx + ox, ny + oy)) continue;
+      seen[t] = 1; q[tail++] = t;
+    }
+  }
+  for (let y = 1; y < bh - 1; y++) for (let x = 1; x < bw - 1; x++) {
+    const gx = x + ox, gy = y + oy;
+    if (gx >= 0 && gy >= 0 && gx < sw && gy < sh && !seen[y * bw + x]) out[gy * sw + gx] = 1;
+  }
+  return out;
+}
+function wandRebuild() {
+  if (!wand) return;
+  const tol = +$('tol').value; wand.mask.fill(0);
+  for (const s of wand.seeds) { const m = s.m || wandGrow(s[0], s[1], tol); for (let i = 0; i < m.length; i++) if (m[i]) wand.mask[i] = 1; }
+  const tg = wand.tint.getContext('2d'), id = tg.createImageData(wand.sw, wand.sh);
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#D8461B';
+  const tmp = mk(1, 1).getContext('2d'); tmp.fillStyle = accent; tmp.fillRect(0, 0, 1, 1);
+  const [ar, ag, ab] = tmp.getImageData(0, 0, 1, 1).data;
+  let count = 0;
+  for (let i = 0; i < wand.mask.length; i++) if (wand.mask[i]) { const j = i * 4; id.data[j] = ar; id.data[j + 1] = ag; id.data[j + 2] = ab; id.data[j + 3] = 255; count++; }
+  tg.putImageData(id, 0, 0);
+  wand.count = count;
+  $('wCut').disabled = $('wClear').disabled = !count;
+  draw();
+  return count / wand.mask.length;
+}
+function wandTap(ip) {
+  if (!wand || wand.base !== base) wandPrep();
+  const sx = Math.floor(ip.x * wand.k), sy = Math.floor(ip.y * wand.k);
+  if (sx < 0 || sy < 0 || sx >= wand.sw || sy >= wand.sh) { toast('הקישו בתוך התמונה'); return; }
+  if (ai.state === 'loading' || ai.state === 'idle') { aiInit(); toast('ה-AI עדיין נטען, נסו שוב בעוד רגע'); return; }
+  if (ai.state === 'ready') {
+    let m = null;
+    try { m = aiMask(sx, sy); } catch (e) { console.warn(e); }
+    if (!m) { toast('לא זוהה אובייקט. נסו להקיש במקום אחר'); return; }
+    wand.seeds.push({ m });
+  } else wand.seeds.push([sx, sy]);
+  const frac = wandRebuild();
+  if (frac > .6) toast('הבחירה תפסה את רוב התמונה. הורידו את הרגישות או לחצו ניקוי');
+  else if (wand.seeds.length === 1) toast('נבחר. הקישו שוב כדי להוסיף חלקים, או "גזור את הבחירה"');
+}
+function wandClear() { if (wand) { wand.seeds = []; wandRebuild(); } }
+function wandCut() {
+  if (!wand || !wand.count) return;
+  const { sw, sh, mask, k } = wand;
+  // mask canvas at wand size, then scaled up smoothly to full size
+  const small = mk(sw, sh), sg = small.getContext('2d'), id = sg.createImageData(sw, sh);
+  let minx = sw, miny = sh, maxx = 0, maxy = 0;
+  for (let i = 0; i < mask.length; i++) if (mask[i]) {
+    id.data[i * 4 + 3] = 255; const x = i % sw, y = (i / sw) | 0;
+    if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
+  }
+  sg.putImageData(id, 0, 0);
+  const full = mk(base.width, base.height), fg = full.getContext('2d');
+  fg.imageSmoothingQuality = 'high'; fg.drawImage(small, 0, 0, base.width, base.height);
+  // sharpen the soft upscaled edge a little
+  const fd = fg.getImageData(0, 0, full.width, full.height);
+  for (let i = 3; i < fd.data.length; i += 4) { const a = fd.data[i]; fd.data[i] = a < 70 ? 0 : a > 185 ? 255 : (a - 70) * 255 / 115 | 0; }
+  fg.putImageData(fd, 0, 0);
+  wand.seeds = [];
+  if (cutWithMask(full, minx / k - 2, miny / k - 2, (maxx + 1) / k + 2, (maxy + 1) / k + 2)) { wand = null; $('wCut').disabled = $('wClear').disabled = true; }
+}
+
+/* ---------- hit testing ---------- */
+function hit(p) {
+  for (let i = objects.length - 1; i >= 0; i--) {
+    const o = objects[i], l = worldToLocal(o, p), lx = l.x + o.w / 2, ly = l.y + o.h / 2;
+    if (lx < 0 || ly < 0 || lx >= o.w || ly >= o.h) continue;
+    if (o.alpha[((ly | 0) * o.w + (lx | 0)) * 4 + 3] > 20) return o;
+  }
+  // forgiving second pass: inside bounding box of a small piece
+  for (let i = objects.length - 1; i >= 0; i--) {
+    const o = objects[i], l = worldToLocal(o, p);
+    if (Math.abs(l.x) <= o.w / 2 && Math.abs(l.y) <= o.h / 2 && o.w * o.scale * view.s < 90) return o;
+  }
+  return null;
+}
+function onHandle(sp) {
+  if (!sel || mode !== 'move') return false;
+  return dist(sp, toScr(localToWorld(sel, sel.w / 2, sel.h / 2))) < 26;
+}
+
+/* ---------- pointer gestures ---------- */
+function pos(e) { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+function twoPts() { const v = [...pointers.values()]; return [v[0], v[1]]; }
+function markChange() { if (gesture && !gesture.pushed) { pushUndo(); gesture.pushed = true; } }
+
+cv.addEventListener('pointerdown', e => {
+  if (!base) return;
+  cv.setPointerCapture(e.pointerId);
+  const sp = pos(e); pointers.set(e.pointerId, sp);
+  if (pointers.size === 1) {
+    const ip = toImg(sp);
+    if (mode === 'cut') { lasso = [ip]; gesture = { type: 'lasso' }; }
+    else if (mode === 'wand') { gesture = { type: 'pan', tap: true, p0: sp, o0: { x: view.ox, y: view.oy } }; }
+    else if (onHandle(sp)) {
+      gesture = { type: 'handle', c: { x: sel.cx, y: sel.cy }, d0: dist(ip, { x: sel.cx, y: sel.cy }), a0: ang({ x: sel.cx, y: sel.cy }, ip), s0: sel.scale, r0: sel.rot };
+    } else {
+      const o = hit(ip);
+      if (o) { sel = o; gesture = { type: 'drag', p0: ip, c0: { x: o.cx, y: o.cy } }; }
+      else { sel = null; gesture = { type: 'pan', p0: sp, o0: { x: view.ox, y: view.oy } }; }
+      updateUI();
+    }
+  } else if (pointers.size === 2) {
+    lasso = null;
+    const [a, b] = twoPts();
+    const pushed = gesture && gesture.pushed;
+    if (sel && mode === 'move') {
+      const ia = toImg(a), ib = toImg(b);
+      gesture = { type: 'pinchObj', pushed, d0: dist(ia, ib), a0: ang(ia, ib), m0: mid(ia, ib), s0: sel.scale, r0: sel.rot, c0: { x: sel.cx, y: sel.cy } };
+    } else {
+      const m = mid(a, b);
+      gesture = { type: 'pinchView', d0: dist(a, b), m0: m, s0: view.s, im: toImg(m) };
+    }
+  }
+  draw();
+});
+
+cv.addEventListener('pointermove', e => {
+  if (!pointers.has(e.pointerId)) return;
+  const sp = pos(e); pointers.set(e.pointerId, sp);
+  if (!gesture) return;
+  const ip = toImg(sp);
+  switch (gesture.type) {
+    case 'lasso': {
+      const last = lasso[lasso.length - 1];
+      if (dist(last, ip) * view.s > 2) lasso.push(ip);
+      break;
+    }
+    case 'drag':
+      markChange();
+      sel.cx = gesture.c0.x + ip.x - gesture.p0.x; sel.cy = gesture.c0.y + ip.y - gesture.p0.y; break;
+    case 'handle': {
+      markChange();
+      const d = dist(ip, gesture.c);
+      sel.scale = Math.min(8, Math.max(.05, gesture.s0 * d / Math.max(1, gesture.d0)));
+      sel.rot = gesture.r0 + ang(gesture.c, ip) - gesture.a0;
+      updateSliders(); break;
+    }
+    case 'pan':
+      if (gesture.tap && dist(sp, gesture.p0) < 10) break;
+      gesture.tap = false;
+      view.ox = gesture.o0.x + sp.x - gesture.p0.x; view.oy = gesture.o0.y + sp.y - gesture.p0.y; break;
+    case 'pinchObj': {
+      if (pointers.size < 2) break;
+      markChange();
+      const [a, b] = twoPts(), ia = toImg(a), ib = toImg(b), m = mid(ia, ib);
+      sel.scale = Math.min(8, Math.max(.05, gesture.s0 * dist(ia, ib) / Math.max(1, gesture.d0)));
+      sel.rot = gesture.r0 + ang(ia, ib) - gesture.a0;
+      sel.cx = gesture.c0.x + m.x - gesture.m0.x; sel.cy = gesture.c0.y + m.y - gesture.m0.y;
+      updateSliders(); break;
+    }
+    case 'pinchView': {
+      if (pointers.size < 2) break;
+      const [a, b] = twoPts(), m = mid(a, b);
+      view.s = Math.min(12, Math.max(.05, gesture.s0 * dist(a, b) / Math.max(1, gesture.d0)));
+      view.ox = m.x - gesture.im.x * view.s; view.oy = m.y - gesture.im.y * view.s; break;
+    }
+  }
+  draw();
+});
+
+function endPointer(e) {
+  if (!pointers.has(e.pointerId)) return;
+  pointers.delete(e.pointerId);
+  if (gesture && gesture.type === 'lasso' && pointers.size === 0) { gesture = null; finishLasso(); return; }
+  if (gesture && gesture.tap && pointers.size === 0) { const p = toImg(gesture.p0); gesture = null; wandTap(p); return; }
+  if (pointers.size === 0 || (gesture && gesture.type.startsWith('pinch'))) gesture = null;
+  updateUI(); draw();
+}
+cv.addEventListener('pointerup', endPointer);
+cv.addEventListener('pointercancel', endPointer);
+
+cv.addEventListener('wheel', e => {
+  if (!base) return; e.preventDefault();
+  const f = Math.exp(-e.deltaY * .0015), sp = pos(e);
+  if (sel && mode === 'move') { sel.scale = Math.min(8, Math.max(.05, sel.scale * f)); updateSliders(); }
+  else { const ip = toImg(sp); view.s = Math.min(12, Math.max(.05, view.s * f)); view.ox = sp.x - ip.x * view.s; view.oy = sp.y - ip.y * view.s; }
+  draw();
+}, { passive: false });
+
+/* ---------- UI ---------- */
+function setMode(m) {
+  mode = m; lasso = null;
+  $('mCut').setAttribute('aria-pressed', m === 'cut'); $('mMove').setAttribute('aria-pressed', m === 'move');
+  $('mWand').setAttribute('aria-pressed', m === 'wand');
+  updateUI(); draw();
+}
+function updateSliders() {
+  if (!sel) return;
+  const pct = Math.round(sel.scale * 100), deg = Math.round(((sel.rot * 180 / Math.PI + 540) % 360) - 180);
+  $('sz').value = Math.min(400, Math.max(10, pct)); $('szOut').textContent = pct + '%';
+  $('rot').value = deg; $('rotOut').textContent = deg + '°';
+  $('objSize').textContent = `${Math.round(sel.w * sel.scale)}×${Math.round(sel.h * sel.scale)} פיקסלים`;
+}
+function updateUI() {
+  const showObj = mode === 'move' && !!sel;
+  $('cutOpts').hidden = mode === 'move';
+  $('cutOpts').querySelector('.hint').hidden = mode !== 'cut';
+  $('wandOpts').hidden = mode !== 'wand';
+  $('wandOpts').style.display = mode === 'wand' ? 'grid' : '';
+  $('tolRow').hidden = ai.state === 'ready' || ai.state === 'loading';
+  $('wandHint').textContent = ai.state === 'ready'
+    ? 'הקישו על האובייקט וה-AI יזהה את הגבולות שלו. הקשה נוספת מוסיפה עוד אובייקט.'
+    : ai.state === 'loading' ? 'טוען את זיהוי ה-AI…'
+    : 'הקישו על האובייקט. כל הקשה נוספת מוסיפה עוד חלק לבחירה.';
+  $('moveHint').hidden = !(mode === 'move' && !sel);
+  $('objOpts').hidden = !showObj;
+  $('objOpts').style.display = showObj ? 'grid' : '';
+  if (sel) { $('objNum').textContent = objects.indexOf(sel) + 1 + ' מתוך ' + objects.length; updateSliders(); }
+}
+
+$('mCut').onclick = () => setMode('cut');
+$('mWand').onclick = () => setMode('wand');
+$('wCut').onclick = wandCut;
+$('wClear').onclick = wandClear;
+$('tol').addEventListener('input', () => { $('tolOut').textContent = $('tol').value; if (wand && wand.seeds.length) wandRebuild(); });
+$('mMove').onclick = () => { setMode('move'); if (!objects.length) toast('עוד לא גזרתם כלום. עברו ל"חיתוך" והקיפו אובייקט'); };
+$('fit').onclick = () => { fit(); draw(); };
+$('undo').onclick = undo;
+
+let sliderPushed = false;
+['sz', 'rot'].forEach(id => {
+  $(id).addEventListener('pointerdown', () => { sliderPushed = false; });
+  $(id).addEventListener('input', () => {
+    if (!sel) return;
+    if (!sliderPushed) { pushUndo(); sliderPushed = true; }
+    if (id === 'sz') sel.scale = $('sz').value / 100; else sel.rot = $('rot').value * Math.PI / 180;
+    updateSliders(); draw();
+  });
+  $(id).addEventListener('change', () => { sliderPushed = false; });
+});
+
+$('aDup').onclick = () => {
+  if (!sel) return; pushUndo();
+  const off = 40 / view.s, c = { ...sel, id: nextId++, cx: sel.cx + off, cy: sel.cy + off };
+  objects.push(c); sel = c; updateUI(); draw(); toast('נוצר עותק');
+};
+$('aFlip').onclick = () => { if (!sel) return; pushUndo(); sel.flip *= -1; draw(); };
+$('aFront').onclick = () => { if (!sel) return; pushUndo(); objects = objects.filter(o => o !== sel).concat(sel); updateUI(); draw(); };
+$('aReset').onclick = () => { if (!sel) return; pushUndo(); Object.assign(sel, { cx: sel.home.cx, cy: sel.home.cy, scale: 1, rot: 0, flip: 1 }); updateUI(); draw(); };
+$('aDel').onclick = () => { if (!sel) return; pushUndo(); objects = objects.filter(o => o !== sel); sel = null; updateUI(); draw(); toast('האובייקט נמחק. אפשר לבטל עם החץ למעלה'); };
+
+/* ---------- load & save ---------- */
+function loadCanvas(c) {
+  base = c; objects = []; sel = null; undoStack = []; wand = null; $('undo').disabled = true;
+  $('wCut').disabled = $('wClear').disabled = true;
+  setMode(NATIVE ? 'wand' : 'cut'); fit(); draw();
+}
+$('file').addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  const url = URL.createObjectURL(f), img = new Image();
+  img.onload = () => {
+    const k = Math.min(1, MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = mk(Math.round(img.naturalWidth * k), Math.round(img.naturalHeight * k));
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(url); loadCanvas(c);
+    toast('התמונה נטענה. הקיפו אובייקט כדי לגזור אותו');
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); toast('לא הצלחנו לפתוח את הקובץ. נסו תמונה מסוג JPG או PNG'); };
+  img.src = url; e.target.value = '';
+});
+
+$('save').onclick = () => {
+  if (!base) return;
+  const out = mk(base.width, base.height), g = out.getContext('2d');
+  g.imageSmoothingQuality = 'high'; g.drawImage(base, 0, 0); objects.forEach(o => drawObj(g, o));
+  $('outImg').src = out.toDataURL('image/jpeg', .92);
+  $('shareBtn').hidden = !NATIVE;
+  const touch = matchMedia('(pointer: coarse)').matches;
+  $('saveHint').textContent = NATIVE
+    ? 'לחצו "שמירה או שיתוף" ובחרו גלריה, Google Photos או וואטסאפ.'
+    : touch
+    ? 'לחיצה ארוכה על התמונה ואז "שמירה בתמונות" כדי לשמור אותה בטלפון.'
+    : 'לחיצה ימנית על התמונה ואז "שמירת תמונה בשם" כדי לשמור אותה במחשב.';
+  $('sheet').hidden = false;
+};
+$('closeSheet').onclick = () => { $('sheet').hidden = true; };
+$('shareBtn').onclick = async () => {
+  try {
+    const P = window.Capacitor.Plugins, name = 'gzor-' + Date.now() + '.jpg';
+    const r = await P.Filesystem.writeFile({ path: name, data: $('outImg').src.split(',')[1], directory: 'CACHE' });
+    await P.Share.share({ title: 'גזור והזז', files: [r.uri], dialogTitle: 'שמירה או שיתוף' });
+  } catch (e) {
+    if (!/cancel/i.test(String(e && e.message))) toast('השיתוף לא הצליח. נסו שוב');
+  }
+};
+if (NATIVE) aiInit();
+
+new ResizeObserver(resize).observe(stage);
+loadCanvas(sample());
+resize();
+toast(NATIVE ? 'תמונה לדוגמה. הקישו על הכדור או העץ, או בחרו תמונה משלכם'
+  : 'תמונה לדוגמה. הקיפו את הכדור או העץ כדי לגזור, או בחרו תמונה משלכם', 4200);
+})();
+</script>

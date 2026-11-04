@@ -1,0 +1,9 @@
+{
+  "appId": "com.commandoFox.gzor",
+  "appName": "גזור והזז",
+  "webDir": "www",
+  "android": {
+    "adjustMarginsForEdgeToEdge": "force",
+    "backgroundColor": "#2D5A4C"
+  }
+}
