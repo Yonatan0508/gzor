@@ -73,14 +73,38 @@ button:disabled{opacity:.4;cursor:default}
 .slider{display:grid;grid-template-columns:52px 1fr 52px;align-items:center;gap:8px;font-size:14px;font-weight:600}
 .slider output{text-align:start;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600}
 input[type=range]{width:100%;accent-color:var(--accent);height:28px}
-.actions{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.actions{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
 .actions button{flex-direction:column;gap:2px;min-height:52px;padding:4px 2px;font-size:12px;border-radius:10px}
 .actions button.danger{color:var(--danger)}
 
-.sheet{position:fixed;inset:0;background:rgba(6,10,9,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));z-index:20;color:#fff;text-align:center}
-.sheet img{max-width:100%;max-height:70vh;border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.5);-webkit-touch-callout:default;user-select:auto}
-.sheet p{margin:0;font-size:15px;line-height:1.5;max-width:36ch}
-.sheet button{color:#fff;border-color:rgba(255,255,255,.35)}
+.bsheet{position:fixed;inset:0;z-index:20;background:rgba(6,10,9,.55);display:flex;align-items:flex-end;justify-content:center;padding-top:calc(24px + env(safe-area-inset-top,0px))}
+.bcard{background:var(--surface);color:var(--ink);width:100%;max-width:560px;max-height:100%;overflow:auto;overscroll-behavior:contain;border-radius:18px 18px 0 0;padding-block:12px calc(18px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:12px;box-shadow:0 -10px 40px rgba(0,0,0,.3)}
+.bhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.bhead h2{margin:0;font-family:var(--f-display);font-size:21px;font-weight:400;line-height:1.2}
+.bhead .icon-btn{border:0}
+h3.sub{margin:6px 0 0;font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.04em}
+.wide{width:100%;min-height:46px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:12px 10px}
+.tile{position:relative;display:grid;gap:3px;align-content:start;min-width:0}
+.tile-open{padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;display:block;min-height:0;width:100%;background:var(--bg)}
+.tile img{display:block;width:100%;aspect-ratio:1;object-fit:cover}
+.models .tile img{object-fit:contain;padding:6px;background:repeating-conic-gradient(var(--line) 0 25%,var(--surface) 0 50%) 0 0/14px 14px}
+.tile.current .tile-open{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.tile .cap{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile .date{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tile .del{position:absolute;top:6px;inset-inline-end:6px;width:30px;min-height:30px;padding:0;border-radius:999px;background:rgba(10,16,14,.6);color:#fff;border:0;font-size:12px}
+.tile .del.armed{width:auto;padding:0 10px;background:var(--danger)}
+.empty{color:var(--muted);margin:0;line-height:1.5}
+#outImg{max-height:38vh;width:auto;max-width:100%;justify-self:center;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.2);-webkit-touch-callout:default;user-select:auto}
+.field{display:grid;gap:6px}
+.field label{font-weight:700;font-size:14px}
+.field input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;min-height:44px;padding:0 12px;width:100%}
+.field input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sgrid button{min-height:46px}
+.sgrid .primary{grid-column:1/-1}
+.sgrid button:only-child,.sgrid button.solo{grid-column:1/-1}
+.busy{opacity:.6;pointer-events:none}
 @media (prefers-reduced-motion: reduce){.toast{transition:none}}
 </style>
 
@@ -90,16 +114,14 @@ input[type=range]{width:100%;accent-color:var(--accent);height:28px}
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></svg>
       גזור והזז
     </div>
-    <label class="btn" for="file">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
-      <span class="lbl">תמונה</span>
-      <input id="file" type="file" accept="image/*">
-    </label>
-    <label class="btn" for="addFile" id="addBtn" title="הוספת אובייקט מתמונה אחרת">
+    <button id="openLib" title="הסצנות שלי ותמונה חדשה">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      <span class="lbl">סצנות</span>
+    </button>
+    <button id="openAdd" title="הוספת אובייקט או מודל">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       <span class="lbl">הוספה</span>
-      <input id="addFile" type="file" accept="image/*">
-    </label>
+    </button>
     <button id="undo" class="icon-btn" aria-label="ביטול פעולה" title="ביטול" disabled>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h-6a5 5 0 0 0 0 10h7"/><path d="m12 4 3 3-3 3"/></svg>
     </button>
@@ -167,17 +189,59 @@ input[type=range]{width:100%;accent-color:var(--accent);height:28px}
         <button id="aFlip"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3v18"/><path d="M8 7 3 17h5zM16 7l5 10h-5z"/></svg>היפוך</button>
         <button id="aFront"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg>לחזית</button>
         <button id="aReset"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v5h5"/></svg>איפוס</button>
+        <button id="aModel" title="שמירה כמודל לשימוש בתמונות אחרות"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg>מודל</button>
         <button id="aDel" class="danger"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>מחיקה</button>
       </div>
     </div>
   </section>
 </div>
 
-<div id="sheet" class="sheet" hidden dir="rtl">
-  <img id="outImg" alt="התמונה הסופית">
-  <p id="saveHint">לחיצה ארוכה על התמונה ואז "שמירה בתמונות" כדי לשמור אותה בטלפון.</p>
-  <button id="shareBtn" class="primary" hidden>שמירה או שיתוף</button>
-  <button id="closeSheet">חזרה לעריכה</button>
+<div id="libSheet" class="bsheet" hidden dir="rtl">
+  <div class="bcard" role="dialog" aria-modal="true" aria-labelledby="libTitle">
+    <div class="bhead"><h2 id="libTitle">הסצנות שלי</h2><button class="icon-btn" data-close aria-label="סגירה"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <label class="btn primary wide" for="file">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
+      תמונה חדשה מהגלריה
+      <input id="file" type="file" accept="image/*">
+    </label>
+    <div id="sceneGrid" class="tiles"></div>
+    <p id="sceneEmpty" class="empty" hidden>עוד אין סצנות שמורות. ערכו תמונה, לחצו "שמירה" ואז "שמירת סצנה לעריכה".</p>
+  </div>
+</div>
+
+<div id="addSheet" class="bsheet" hidden dir="rtl">
+  <div class="bcard" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+    <div class="bhead"><h2 id="addTitle">הוספה לתמונה</h2><button class="icon-btn" data-close aria-label="סגירה"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <label class="btn wide" for="addFile">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
+      אובייקט מתמונה אחרת
+      <input id="addFile" type="file" accept="image/*">
+    </label>
+    <h3 class="sub">המודלים שלי</h3>
+    <div id="modelGrid" class="tiles models"></div>
+    <p id="modelEmpty" class="empty" hidden>עוד אין מודלים שמורים. גזרו אובייקט, בחרו אותו ב"הזזה" ולחצו "מודל".</p>
+  </div>
+</div>
+
+<div id="saveSheet" class="bsheet" hidden dir="rtl">
+  <div class="bcard" role="dialog" aria-modal="true" aria-labelledby="saveTitle">
+    <div class="bhead"><h2 id="saveTitle">שמירה</h2><button class="icon-btn" data-close aria-label="סגירה"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <img id="outImg" alt="התמונה הסופית">
+    <div class="field"><label for="sceneName">שם הסצנה</label><input id="sceneName" type="text" maxlength="40" autocomplete="off"></div>
+    <div class="sgrid">
+      <button id="saveScene" class="primary">שמירת סצנה לעריכה</button>
+      <button id="saveSceneNew" hidden>שמירה כסצנה חדשה</button>
+      <button id="saveGallery" hidden>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+        שמירה בגלריה
+      </button>
+      <button id="shareBtn" hidden>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
+        שיתוף
+      </button>
+    </div>
+    <p id="saveHint" class="hint"></p>
+  </div>
 </div>
 
 <script>
@@ -333,11 +397,13 @@ function pushUndo() {
   undoStack.push({ base, objects: objects.map(o => ({ ...o })), selId: sel ? sel.id : null });
   if (undoStack.length > 25) undoStack.shift();
   $('undo').disabled = false;
+  scheduleAutosave();
 }
 function undo() {
   const st = undoStack.pop(); if (!st) return;
   base = st.base; objects = st.objects; sel = objects.find(o => o.id === st.selId) || null;
   $('undo').disabled = !undoStack.length; updateUI(); draw();
+  scheduleAutosave();
 }
 
 /* ---------- cutting ---------- */
@@ -910,7 +976,7 @@ let sliderPushed = false;
     if (!sel) return;
     if (!sliderPushed) { pushUndo(); sliderPushed = true; }
     if (id === 'sz') sel.scale = $('sz').value / 100; else sel.rot = $('rot').value * Math.PI / 180;
-    updateSliders(); draw();
+    updateSliders(); draw(); scheduleAutosave();
   });
   $(id).addEventListener('change', () => { sliderPushed = false; });
 });
@@ -947,14 +1013,20 @@ function readImage(input, cb) {
 }
 $('file').addEventListener('change', e => readImage(e.target, c => {
   if (donor) donorRestore();
+  closeSheets();
   loadCanvas(c);
+  scene = { id: null, name: '' };
   toast('התמונה נטענה. בחרו אובייקט בהקשה או בהקפה');
 }));
+
+/* ---------- native plugins (called through the Capacitor bridge directly) ---------- */
+const nat = (plugin, method, opts = {}) => window.Capacitor.nativePromise(plugin, method, opts);
 
 /* ---------- add an object from another photo ---------- */
 let donor = null; // the main photo's state, kept aside while picking from the other photo
 $('addFile').addEventListener('change', e => readImage(e.target, c => {
   if (donor) donorRestore();
+  closeSheets();
   donor = { base, objects, undoStack, view: { ...view }, sel, mode, wand };
   base = c; objects = []; sel = null; undoStack = []; wand = null;
   $('undo').disabled = true; $('save').disabled = true;
@@ -971,8 +1043,8 @@ function donorRestore() {
   if (wand) wandRebuild(); else $('wCut').disabled = $('wClear').disabled = $('wUndo').disabled = true;
   setMode(m);
 }
-function donorFinish(piece) {
-  donorRestore();
+// put a cut-out piece into the main photo, centred in view and sized to fit
+function placePiece(piece, msg) {
   pushUndo();
   const c = toImg({ x: W / 2, y: H / 2 });
   const cx = Math.min(base.width, Math.max(0, c.x)), cy = Math.min(base.height, Math.max(0, c.y));
@@ -980,43 +1052,284 @@ function donorFinish(piece) {
   const o = { id: nextId++, ...piece, cx, cy, scale, rot: 0, flip: 1, home: { cx, cy } };
   objects.push(o); sel = o;
   setMode('move');
-  toast('האובייקט נוסף. גררו אותו למקום וצבטו כדי לשנות גודל');
+  toast(msg || 'האובייקט נוסף. גררו אותו למקום וצבטו כדי לשנות גודל');
   draw();
 }
+function donorFinish(piece) { donorRestore(); placePiece(piece); }
+const withAlpha = c => ({ cv: c, w: c.width, h: c.height, alpha: c.getContext('2d').getImageData(0, 0, c.width, c.height).data });
 $('donorAll').onclick = () => {
   if (!donor) return;
   const c = mk(base.width, base.height); c.getContext('2d').drawImage(base, 0, 0);
-  donorFinish({ cv: c, w: c.width, h: c.height, alpha: c.getContext('2d').getImageData(0, 0, c.width, c.height).data });
+  donorFinish(withAlpha(c));
 };
 $('donorCancel').onclick = () => { if (donor) { donorRestore(); toast('בוטל'); } };
 
-$('save').onclick = () => {
-  if (!base) return;
+/* ---------- storage: scenes and models are kept on this device (IndexedDB) ---------- */
+const store = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise((res, rej) => {
+    let r;
+    try { r = indexedDB.open('gzor', 1); } catch (e) { rej(e); return; }
+    r.onupgradeneeded = () => {
+      const d = r.result;
+      if (!d.objectStoreNames.contains('scenes')) d.createObjectStore('scenes', { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('models')) d.createObjectStore('models', { keyPath: 'id' });
+    };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  }).catch(e => { dbp = null; throw e; }));
+  const run = async (name, mode, fn) => {
+    const d = await open();
+    return new Promise((res, rej) => {
+      const t = d.transaction(name, mode), req = fn(t.objectStore(name));
+      t.oncomplete = () => res(req.result);
+      t.onerror = t.onabort = () => rej(t.error);
+    });
+  };
+  return {
+    put: (n, v) => run(n, 'readwrite', s => s.put(v)),
+    get: (n, id) => run(n, 'readonly', s => s.get(id)),
+    all: n => run(n, 'readonly', s => s.getAll()),
+    del: (n, id) => run(n, 'readwrite', s => s.delete(id)),
+  };
+})();
+const newId = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+// each canvas is encoded once; saving a scene again reuses the same files
+const blobCache = new WeakMap();
+function canvasBlob(c, type = 'image/png', q) {
+  let p = blobCache.get(c);
+  if (!p) {
+    p = new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('encode failed')), type, q));
+    blobCache.set(c, p);
+  }
+  return p;
+}
+function blobToCanvas(b) {
+  return new Promise((res, rej) => {
+    const u = URL.createObjectURL(b), im = new Image();
+    im.onload = () => {
+      const c = mk(im.naturalWidth, im.naturalHeight); c.getContext('2d').drawImage(im, 0, 0);
+      URL.revokeObjectURL(u); blobCache.set(c, Promise.resolve(b)); res(c);
+    };
+    im.onerror = () => { URL.revokeObjectURL(u); rej(new Error('decode failed')); };
+    im.src = u;
+  });
+}
+function thumbOf(c, size, type = 'image/jpeg') {
+  const k = Math.min(1, size / Math.max(c.width, c.height));
+  const t = mk(Math.max(1, Math.round(c.width * k)), Math.max(1, Math.round(c.height * k))), g = t.getContext('2d');
+  g.imageSmoothingQuality = 'high'; g.drawImage(c, 0, 0, t.width, t.height);
+  return t.toDataURL(type, .82);
+}
+function composite() {
   const out = mk(base.width, base.height), g = out.getContext('2d');
   g.imageSmoothingQuality = 'high'; g.drawImage(base, 0, 0); objects.forEach(o => drawObj(g, o));
-  $('outImg').src = out.toDataURL('image/jpeg', .92);
-  $('shareBtn').hidden = !NATIVE;
-  const touch = matchMedia('(pointer: coarse)').matches;
-  $('saveHint').textContent = NATIVE
-    ? 'לחצו "שמירה או שיתוף" ובחרו גלריה, Google Photos או וואטסאפ.'
-    : touch
-    ? 'לחיצה ארוכה על התמונה ואז "שמירה בתמונות" כדי לשמור אותה בטלפון.'
-    : 'לחיצה ימנית על התמונה ואז "שמירת תמונה בשם" כדי לשמור אותה במחשב.';
-  $('sheet').hidden = false;
+  return out;
+}
+const fmtDate = t => {
+  const d = new Date(t), now = new Date();
+  const hm = d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+  return d.toDateString() === now.toDateString() ? 'היום ' + hm : d.toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' }) + ' ' + hm;
 };
-$('closeSheet').onclick = () => { $('sheet').hidden = true; };
+const defaultName = () => 'סצנה ' + new Date().toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' }) +
+  ' ' + new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+
+/* ---------- scenes: save, autosave, reopen ---------- */
+let scene = { id: null, name: '' }, autosaveT = 0, saveChain = Promise.resolve();
+async function sceneRecord() {
+  return {
+    id: scene.id, name: scene.name, updated: Date.now(), w: base.width, h: base.height,
+    thumb: thumbOf(composite(), 360),
+    base: await canvasBlob(base, 'image/jpeg', .93),
+    objects: await Promise.all(objects.map(async o => ({
+      cv: await canvasBlob(o.cv), cx: o.cx, cy: o.cy, scale: o.scale, rot: o.rot, flip: o.flip, home: o.home,
+    }))),
+  };
+}
+function writeScene() {
+  saveChain = saveChain.catch(() => {}).then(async () => store.put('scenes', await sceneRecord()));
+  return saveChain;
+}
+// once a scene has been saved, every change is saved to it a moment later
+function scheduleAutosave() {
+  if (!scene.id) return;
+  clearTimeout(autosaveT);
+  autosaveT = setTimeout(function tick() {
+    if (gesture || donor) { autosaveT = setTimeout(tick, 1200); return; }
+    writeScene().catch(e => console.warn('autosave failed', e));
+  }, 1500);
+}
+async function openScene(id) {
+  let rec;
+  try { rec = await store.get('scenes', id); } catch (e) { rec = null; }
+  if (!rec) { toast('לא הצלחנו לפתוח את הסצנה'); return; }
+  try {
+    const b = await blobToCanvas(rec.base);
+    const objs = await Promise.all(rec.objects.map(async o => {
+      const c = await blobToCanvas(o.cv);
+      return { id: nextId++, ...withAlpha(c), cx: o.cx, cy: o.cy, scale: o.scale, rot: o.rot, flip: o.flip, home: o.home || { cx: o.cx, cy: o.cy } };
+    }));
+    if (donor) donorRestore();
+    clearTimeout(autosaveT);
+    loadCanvas(b);
+    objects = objs; scene = { id: rec.id, name: rec.name };
+    setMode(objs.length ? 'move' : 'wand'); draw();
+    closeSheets();
+    toast(`"${rec.name}" נפתחה. השינויים נשמרים אוטומטית`);
+  } catch (e) { console.warn(e); toast('לא הצלחנו לפתוח את הסצנה'); }
+}
+
+/* ---------- models: cut-outs kept for reuse in any photo ---------- */
+async function saveModel(o) {
+  const id = newId('m');
+  await store.put('models', { id, updated: Date.now(), w: o.w, h: o.h, blob: await canvasBlob(o.cv), thumb: thumbOf(o.cv, 220, 'image/png') });
+}
+async function insertModel(id) {
+  try {
+    const rec = await store.get('models', id);
+    const c = await blobToCanvas(rec.blob);
+    if (donor) donorRestore();
+    closeSheets();
+    placePiece(withAlpha(c), 'המודל נוסף. גררו אותו למקום וצבטו כדי לשנות גודל');
+  } catch (e) { console.warn(e); toast('לא הצלחנו להוסיף את המודל'); }
+}
+$('aModel').onclick = async () => {
+  if (!sel) return;
+  const b = $('aModel'); b.classList.add('busy');
+  try { await saveModel(sel); toast('נשמר במודלים. אפשר להוסיף אותו לכל תמונה דרך "הוספה"'); }
+  catch (e) { console.warn(e); toast('השמירה לא הצליחה. ייתכן שאין מקום פנוי במכשיר'); }
+  b.classList.remove('busy');
+};
+
+/* ---------- bottom sheets ---------- */
+const SHEETS = ['libSheet', 'addSheet', 'saveSheet'];
+function openSheet(id) { closeSheets(); $(id).hidden = false; }
+function closeSheets() { SHEETS.forEach(id => { $(id).hidden = true; }); }
+SHEETS.forEach(id => $(id).addEventListener('click', e => {
+  if (e.target === $(id) || e.target.closest('[data-close]')) closeSheets();
+}));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheets(); });
+
+function tile(rec, kind) {
+  const d = document.createElement('div');
+  d.className = 'tile' + (kind === 'scene' && rec.id === scene.id ? ' current' : '');
+  const open = document.createElement('button');
+  open.className = 'tile-open';
+  open.setAttribute('aria-label', kind === 'scene' ? 'פתיחת ' + rec.name : 'הוספת המודל');
+  const img = new Image(); img.alt = ''; img.src = rec.thumb; img.loading = 'lazy';
+  open.append(img);
+  open.onclick = () => kind === 'scene' ? openScene(rec.id) : insertModel(rec.id);
+  d.append(open);
+  if (kind === 'scene') {
+    const cap = document.createElement('div'); cap.className = 'cap'; cap.textContent = rec.name;
+    const dt = document.createElement('div'); dt.className = 'date'; dt.textContent = fmtDate(rec.updated);
+    d.append(cap, dt);
+  }
+  // delete takes two taps: the first arms it, the second deletes
+  const del = document.createElement('button');
+  del.className = 'del'; del.setAttribute('aria-label', 'מחיקה');
+  del.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+  let armT = 0;
+  del.onclick = async () => {
+    if (!del.classList.contains('armed')) {
+      del.classList.add('armed'); del.textContent = 'למחוק?';
+      armT = setTimeout(() => { del.classList.remove('armed'); del.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>'; }, 3000);
+      return;
+    }
+    clearTimeout(armT);
+    try {
+      await store.del(kind === 'scene' ? 'scenes' : 'models', rec.id);
+      if (kind === 'scene' && rec.id === scene.id) { scene = { id: null, name: '' }; clearTimeout(autosaveT); }
+      d.remove();
+      kind === 'scene' ? renderScenes() : renderModels();
+    } catch (e) { toast('המחיקה לא הצליחה'); }
+  };
+  d.append(del);
+  return d;
+}
+async function renderList(storeName, grid, empty, kind, emptyText) {
+  let list = [];
+  try { list = await store.all(storeName); empty.textContent = emptyText; }
+  catch (e) { empty.textContent = 'אי אפשר לשמור במכשיר הזה כרגע, כי האחסון של הדפדפן חסום.'; }
+  list.sort((a, b) => b.updated - a.updated);
+  grid.replaceChildren(...list.map(r => tile(r, kind)));
+  empty.hidden = list.length > 0;
+}
+const renderScenes = () => renderList('scenes', $('sceneGrid'), $('sceneEmpty'), 'scene',
+  'עוד אין סצנות שמורות. ערכו תמונה, לחצו "שמירה" ואז "שמירת סצנה לעריכה".');
+const renderModels = () => renderList('models', $('modelGrid'), $('modelEmpty'), 'model',
+  'עוד אין מודלים שמורים. גזרו אובייקט, בחרו אותו ב"הזזה" ולחצו "מודל".');
+$('openLib').onclick = () => { openSheet('libSheet'); renderScenes(); };
+$('openAdd').onclick = () => { openSheet('addSheet'); renderModels(); };
+
+/* ---------- save sheet ---------- */
+let outURL = '';
+$('save').onclick = () => {
+  if (!base || donor) return;
+  outURL = composite().toDataURL('image/jpeg', .92);
+  $('outImg').src = outURL;
+  $('sceneName').value = scene.name || defaultName();
+  $('saveScene').textContent = scene.id ? 'עדכון הסצנה' : 'שמירת סצנה לעריכה';
+  $('saveSceneNew').hidden = !scene.id;
+  $('saveGallery').hidden = $('shareBtn').hidden = !NATIVE;
+  const touch = matchMedia('(pointer: coarse)').matches;
+  $('saveHint').hidden = NATIVE;
+  $('saveHint').textContent = touch
+    ? 'כדי לשמור את התמונה בטלפון: לחיצה ארוכה עליה ואז "שמירה בתמונות".'
+    : 'כדי לשמור את התמונה במחשב: לחיצה ימנית עליה ואז "שמירת תמונה בשם".';
+  openSheet('saveSheet');
+};
+async function doSaveScene(asNew) {
+  const b = asNew ? $('saveSceneNew') : $('saveScene');
+  b.classList.add('busy');
+  const prev = { ...scene };
+  try {
+    if (asNew || !scene.id) scene.id = newId('s');
+    scene.name = $('sceneName').value.trim() || defaultName();
+    clearTimeout(autosaveT);
+    await writeScene();
+    closeSheets();
+    toast(`"${scene.name}" נשמרה. מעכשיו כל שינוי נשמר אוטומטית`);
+  } catch (e) {
+    console.warn(e); scene = prev;
+    toast('השמירה לא הצליחה. ייתכן שאין מקום פנוי במכשיר');
+  }
+  b.classList.remove('busy');
+}
+$('saveScene').onclick = () => doSaveScene(false);
+$('saveSceneNew').onclick = () => doSaveScene(true);
+
+const ALBUM = 'גזור והזז';
+$('saveGallery').onclick = async () => {
+  const b = $('saveGallery'); b.classList.add('busy');
+  try {
+    const root = (await nat('Media', 'getAlbumsPath')).path;
+    const find = async () => ((await nat('Media', 'getAlbums')).albums || [])
+      .find(a => a.name === ALBUM && (!root || String(a.identifier).startsWith(root)));
+    let album = await find();
+    if (!album) { await nat('Media', 'createAlbum', { name: ALBUM }); album = await find(); }
+    if (!album) throw new Error('album not found');
+    await nat('Media', 'savePhoto', { path: outURL, albumIdentifier: album.identifier, fileName: 'gzor-' + Date.now() });
+    toast(`נשמר בגלריה, באלבום "${ALBUM}"`);
+  } catch (e) {
+    console.warn(e); toast('השמירה בגלריה לא הצליחה. נסו "שיתוף" ובחרו את אפליקציית התמונות');
+  }
+  b.classList.remove('busy');
+};
 $('shareBtn').onclick = async () => {
   try {
-    const P = window.Capacitor.Plugins, name = 'gzor-' + Date.now() + '.jpg';
-    const r = await P.Filesystem.writeFile({ path: name, data: $('outImg').src.split(',')[1], directory: 'CACHE' });
-    await P.Share.share({ title: 'גזור והזז', files: [r.uri], dialogTitle: 'שמירה או שיתוף' });
+    const name = 'gzor-' + Date.now() + '.jpg';
+    const r = await nat('Filesystem', 'writeFile', { path: name, data: outURL.split(',')[1], directory: 'CACHE' });
+    await nat('Share', 'share', { title: 'גזור והזז', files: [r.uri], dialogTitle: 'שיתוף התמונה' });
   } catch (e) {
     if (!/cancel/i.test(String(e && e.message))) toast('השיתוף לא הצליח. נסו שוב');
   }
 };
+
 if (NATIVE) aiInit();
 
-window.__gzState = () => ({ view: { ...view }, count: wand ? wand.count : 0, k: wand ? wand.k : 0, objects: objects.length });
+window.__gzState = () => ({ view: { ...view }, count: wand ? wand.count : 0, k: wand ? wand.k : 0, objects: objects.length, scene: { ...scene } });
 new ResizeObserver(resize).observe(stage);
 loadCanvas(sample());
 resize();
