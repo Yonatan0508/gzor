@@ -52,11 +52,17 @@ button:disabled{opacity:.4;cursor:default}
 @media (max-width:420px){.top .lbl{display:none}.top .btn{padding:0 10px}}
 
 .panel{background:var(--surface);border-top:1px solid var(--line);padding-block:10px 12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:10px}
-.modes{display:grid;grid-template-columns:repeat(2,1fr);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
 .modes button{border:0;border-radius:9px;min-height:42px;padding:0 6px;font-size:14px;gap:5px}
 .wand-actions{display:flex;gap:8px}
 .wand-actions .primary{flex:1}
 .wand-tools{display:flex;gap:8px;flex-wrap:wrap}
+.seg.ratios{display:grid;grid-template-columns:repeat(5,1fr)}
+.seg.ratios button{padding:0 4px;font-variant-numeric:tabular-nums}
+.opt-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.opt-row .lab{font-size:14px;font-weight:600;min-width:64px}
+.opt-row .seg button{padding:0 10px}
+#bgColor{width:40px;height:36px;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
 .seg{display:inline-grid;grid-auto-flow:column;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:2px;gap:2px}
 .seg button{border:0;min-height:36px;border-radius:8px;padding:0 12px;font-size:14px}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
@@ -153,6 +159,40 @@ h3.sub{margin:6px 0 0;font-size:13px;color:var(--muted);font-weight:700;letter-s
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/></svg>
         הזזה
       </button>
+      <button id="mBg" aria-pressed="false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="7" width="14" height="10" rx="1.5"/><path d="M12 1.5v3.5M10 3l2-1.5L14 3M12 22.5V19M10 21l2 1.5 2-1.5"/></svg>
+        רקע
+      </button>
+    </div>
+
+    <div id="bgOpts" hidden style="display:grid;gap:8px">
+      <div class="seg ratios" role="group" aria-label="צורת התמונה">
+        <button data-r="orig" aria-pressed="true">מקורי</button>
+        <button data-r="1:1" aria-pressed="false"><bdi>1:1</bdi></button>
+        <button data-r="4:5" aria-pressed="false"><bdi>4:5</bdi></button>
+        <button data-r="9:16" aria-pressed="false"><bdi>9:16</bdi></button>
+        <button data-r="16:9" aria-pressed="false"><bdi>16:9</bdi></button>
+      </div>
+      <div class="slider"><label for="bgH">גובה</label><input id="bgH" type="range" min="100" max="300" value="100" dir="ltr"><output id="bgHOut">100%</output></div>
+      <div class="slider"><label for="bgW">רוחב</label><input id="bgW" type="range" min="100" max="300" value="100" dir="ltr"><output id="bgWOut">100%</output></div>
+      <div class="opt-row"><span class="lab">גובה נוסף</span>
+        <div class="seg" role="group" aria-label="איפה להוסיף גובה">
+          <button data-a="top" aria-pressed="false">למעלה</button>
+          <button data-a="center" aria-pressed="true">בשני הצדדים</button>
+          <button data-a="bottom" aria-pressed="false">למטה</button>
+        </div>
+      </div>
+      <div class="opt-row"><span class="lab">מילוי</span>
+        <div class="seg" role="group" aria-label="מילוי השטח החדש">
+          <button data-f="edge" aria-pressed="true">המשך התמונה</button>
+          <button data-f="color" aria-pressed="false">צבע</button>
+        </div>
+        <input id="bgColor" type="color" value="#ffffff" aria-label="צבע המילוי" hidden>
+      </div>
+      <div class="wand-actions">
+        <button id="bgApply" class="primary" disabled>החלה</button>
+        <button id="bgCancel">ביטול</button>
+      </div>
     </div>
 
     <div id="wandOpts" hidden style="display:grid;gap:8px">
@@ -365,6 +405,15 @@ function render() {
 
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#D8461B';
 
+  if (bg && bg.cur && (bg.cur.ox || bg.cur.oy || bg.cur.w !== bg.base.width || bg.cur.h !== bg.base.height)) {
+    // outline the original photo so it's clear what is new
+    const a = toScr({ x: bg.cur.ox, y: bg.cur.oy }), sz = bg.base.width * view.s, sy = bg.base.height * view.s;
+    ctx.save(); ctx.lineWidth = 2; ctx.setLineDash([7, 6]);
+    ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.strokeRect(a.x, a.y, sz, sy);
+    ctx.strokeStyle = accent; ctx.lineDashOffset = 6; ctx.strokeRect(a.x, a.y, sz, sy);
+    ctx.restore();
+  }
+
   if (sel && mode === 'move') {
     const pts = [[-1,-1],[1,-1],[1,1],[-1,1]].map(([a,b]) => toScr(localToWorld(sel, a * sel.w / 2, b * sel.h / 2)));
     ctx.save(); ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
@@ -400,8 +449,11 @@ function pushUndo() {
   scheduleAutosave();
 }
 function undo() {
+  if (bg && bgChanged()) { bgRestore(); bgOpen(); toast('השינוי ברקע בוטל'); return; }
   const st = undoStack.pop(); if (!st) return;
+  bg = null;
   base = st.base; objects = st.objects; sel = objects.find(o => o.id === st.selId) || null;
+  if (mode === 'bg') { sel = null; bgOpen(); fit(); }
   $('undo').disabled = !undoStack.length; updateUI(); draw();
   scheduleAutosave();
 }
@@ -868,6 +920,7 @@ cv.addEventListener('pointerdown', e => {
     if (mode === 'wand' && wandTool === 'lasso') { lasso = [ip]; gesture = { type: 'lasso' }; }
     else if (mode === 'wand' && (wandTool === 'brush' || wandTool === 'erase')) { gesture = brushStart(ip); }
     else if (mode === 'wand') { gesture = { type: 'pan', tap: true, p0: sp, o0: { x: view.ox, y: view.oy } }; }
+    else if (mode === 'bg') { gesture = { type: 'pan', p0: sp, o0: { x: view.ox, y: view.oy } }; }
     else if (onHandle(sp)) {
       gesture = { type: 'handle', c: { x: sel.cx, y: sel.cy }, d0: dist(ip, { x: sel.cx, y: sel.cy }), a0: ang({ x: sel.cx, y: sel.cy }, ip), s0: sel.scale, r0: sel.rot };
     } else {
@@ -958,10 +1011,103 @@ cv.addEventListener('wheel', e => {
 
 /* ---------- UI ---------- */
 function setMode(m) {
+  if (mode === 'bg' && m !== 'bg' && bg) { if (bgChanged()) bgCommit(); else bgRestore(); }
+  const was = mode;
   mode = m; lasso = null;
   $('mMove').setAttribute('aria-pressed', m === 'move');
   $('mWand').setAttribute('aria-pressed', m === 'wand');
+  $('mBg').setAttribute('aria-pressed', m === 'bg');
+  if (m === 'bg' && !bg) { bgPrev = was === 'bg' ? 'move' : was; sel = null; bgOpen(); }
   updateUI(); draw();
+}
+
+/* ---------- background size: make the photo itself taller or wider ---------- */
+let bg = null, bgPrev = 'move', bgFill = 'edge', bgAnchor = 'center', bgRatio = 'orig', bgRaf = 0;
+const BG_MAX = 4096;
+function extendCanvas(src, W2, H2, ox, oy, fill, color) {
+  const sw = src.width, sh = src.height, out = mk(W2, H2), g = out.getContext('2d');
+  if (fill === 'color') { g.fillStyle = color; g.fillRect(0, 0, W2, H2); g.drawImage(src, ox, oy); return out; }
+  // continue the photo: stretch its outermost rows and columns outward and soften them.
+  // Each stretch is drawn past the canvas edge so the blur never fades to transparent.
+  const bh = Math.max(2, Math.round(sh * .015)), bw = Math.max(2, Math.round(sw * .015)), P = 30;
+  const blur = `blur(${Math.max(6, Math.round(Math.max(sw, sh) * .006))}px)`;
+  const tall = mk(sw, H2), tg = tall.getContext('2d');
+  tg.filter = blur;
+  if (oy > 0) tg.drawImage(src, 0, 0, sw, bh, -P, -P, sw + 2 * P, oy + bh + P);
+  const below = H2 - oy - sh;
+  if (below > 0) tg.drawImage(src, 0, sh - bh, sw, bh, -P, oy + sh - bh, sw + 2 * P, below + bh + P);
+  tg.filter = 'none'; tg.drawImage(src, 0, oy);
+  g.filter = blur;
+  if (ox > 0) g.drawImage(tall, 0, 0, bw, H2, -P, -P, ox + bw + P, H2 + 2 * P);
+  const right = W2 - ox - sw;
+  if (right > 0) g.drawImage(tall, sw - bw, 0, bw, H2, ox + sw - bw, -P, right + bw + P, H2 + 2 * P);
+  g.filter = 'none'; g.drawImage(tall, ox, 0);
+  return out;
+}
+function bgOpen() {
+  bg = { base, objs: objects.map(o => ({ o, cx: o.cx, cy: o.cy, home: { ...o.home } })), cur: null };
+  const sw = base.width, sh = base.height;
+  $('bgH').max = Math.max(100, Math.min(300, Math.floor(BG_MAX / sh * 100)));
+  $('bgW').max = Math.max(100, Math.min(300, Math.floor(BG_MAX / sw * 100)));
+  $('bgH').value = $('bgW').value = 100; bgRatio = 'orig';
+  bgSync();
+}
+const bgSize = () => ({ w: Math.round(bg.base.width * $('bgW').value / 100), h: Math.round(bg.base.height * $('bgH').value / 100) });
+function bgChanged() { if (!bg) return false; const s = bgSize(); return s.w !== bg.base.width || s.h !== bg.base.height; }
+function bgSync() {
+  const s = bgSize();
+  $('bgHOut').textContent = $('bgH').value + '%'; $('bgWOut').textContent = $('bgW').value + '%';
+  $('bgApply').disabled = !bgChanged();
+  $('undo').disabled = !(bgChanged() || undoStack.length);
+  document.querySelectorAll('#bgOpts [data-r]').forEach(b => b.setAttribute('aria-pressed', b.dataset.r === bgRatio));
+  document.querySelectorAll('#bgOpts [data-a]').forEach(b => b.setAttribute('aria-pressed', b.dataset.a === bgAnchor));
+  document.querySelectorAll('#bgOpts [data-f]').forEach(b => b.setAttribute('aria-pressed', b.dataset.f === bgFill));
+  $('bgColor').hidden = bgFill !== 'color';
+  if (!bgRaf) bgRaf = requestAnimationFrame(() => { bgRaf = 0; bgPreview(); });
+  return s;
+}
+function bgPreview() {
+  if (!bg) return;
+  const { w, h } = bgSize(), sw = bg.base.width, sh = bg.base.height;
+  const ox = Math.round((w - sw) / 2);
+  const oy = bgAnchor === 'top' ? h - sh : bgAnchor === 'bottom' ? 0 : Math.round((h - sh) / 2);
+  const same = bg.cur && bg.cur.w === w && bg.cur.h === h && bg.cur.ox === ox && bg.cur.oy === oy && bg.cur.fill === bgFill && bg.cur.color === $('bgColor').value;
+  if (same) return;
+  base = (w === sw && h === sh) ? bg.base : extendCanvas(bg.base, w, h, ox, oy, bgFill, $('bgColor').value);
+  for (const r of bg.objs) { r.o.cx = r.cx + ox; r.o.cy = r.cy + oy; r.o.home = { cx: r.home.cx + ox, cy: r.home.cy + oy }; }
+  const resized = !bg.cur || bg.cur.w !== w || bg.cur.h !== h;
+  bg.cur = { w, h, ox, oy, fill: bgFill, color: $('bgColor').value };
+  if (resized) fit();
+  draw();
+}
+function bgRestore() {
+  if (!bg) return;
+  base = bg.base;
+  for (const r of bg.objs) { r.o.cx = r.cx; r.o.cy = r.cy; r.o.home = r.home; }
+  bg = null; fit(); draw();
+}
+function bgCommit() {
+  if (!bg) return;
+  bgPreview();
+  // the undo step holds the photo and positions from before the change
+  undoStack.push({ base: bg.base, objects: bg.objs.map(r => ({ ...r.o, cx: r.cx, cy: r.cy, home: r.home })), selId: null });
+  if (undoStack.length > 25) undoStack.shift();
+  $('undo').disabled = false;
+  const { w, h } = bg.cur; bg = null;
+  scheduleAutosave();
+  toast(`גודל התמונה עכשיו ${w}×${h} פיקסלים`);
+}
+function bgSetRatio(r) {
+  bgRatio = r;
+  const sw = bg.base.width, sh = bg.base.height;
+  let w = sw, h = sh;
+  if (r !== 'orig') {
+    const [a, b] = r.split(':').map(Number), k = a / b;
+    if (sw / sh < k) w = Math.round(sh * k); else h = Math.round(sw / k);   // only ever add, never crop
+  }
+  $('bgW').value = Math.min(+$('bgW').max, Math.ceil(w / sw * 100));
+  $('bgH').value = Math.min(+$('bgH').max, Math.ceil(h / sh * 100));
+  bgSync();
 }
 function updateSliders() {
   if (!sel) return;
@@ -988,12 +1134,23 @@ function updateUI() {
     : ai.state === 'ready' ? 'הקישו על האובייקט וה-AI יזהה את הגבולות שלו. הקשה נוספת מוסיפה עוד אובייקט.'
     : 'הקישו על האובייקט. כל הקשה נוספת מוסיפה עוד חלק לבחירה.';
   $('moveHint').hidden = !(mode === 'move' && !sel);
+  $('bgOpts').hidden = mode !== 'bg';
+  $('bgOpts').style.display = mode === 'bg' ? 'grid' : '';
+  $('mBg').disabled = !!donor;
   $('objOpts').hidden = !showObj;
   $('objOpts').style.display = showObj ? 'grid' : '';
   if (sel) { $('objNum').textContent = objects.indexOf(sel) + 1 + ' מתוך ' + objects.length; updateSliders(); }
 }
 
 $('mWand').onclick = () => setMode('wand');
+$('mBg').onclick = () => setMode('bg');
+['bgH', 'bgW'].forEach(id => $(id).addEventListener('input', () => { bgRatio = ''; bgSync(); }));
+document.querySelectorAll('#bgOpts [data-r]').forEach(b => b.onclick = () => bgSetRatio(b.dataset.r));
+document.querySelectorAll('#bgOpts [data-a]').forEach(b => b.onclick = () => { bgAnchor = b.dataset.a; bgSync(); });
+document.querySelectorAll('#bgOpts [data-f]').forEach(b => b.onclick = () => { bgFill = b.dataset.f; bgSync(); });
+$('bgColor').addEventListener('input', bgSync);
+$('bgApply').onclick = () => { if (bgChanged()) { bgCommit(); setMode(bgPrev); } };
+$('bgCancel').onclick = () => { bgRestore(); setMode(bgPrev); };
 $('wCut').onclick = wandCut;
 $('wClear').onclick = wandClear;
 $('wUndo').onclick = wandUndo;
@@ -1032,6 +1189,7 @@ $('aDel').onclick = () => { if (!sel) return; pushUndo(); objects = objects.filt
 
 /* ---------- load & save ---------- */
 function loadCanvas(c) {
+  bg = null;
   base = c; objects = []; sel = null; undoStack = []; wand = null; $('undo').disabled = true;
   $('wCut').disabled = $('wClear').disabled = $('wUndo').disabled = true;
   setMode('wand');
@@ -1064,6 +1222,7 @@ const nat = (plugin, method, opts = {}) => window.Capacitor.nativePromise(plugin
 /* ---------- add an object from another photo ---------- */
 let donor = null; // the main photo's state, kept aside while picking from the other photo
 $('addFile').addEventListener('change', e => readImage(e.target, c => {
+  if (bg) setMode('move');
   if (donor) donorRestore();
   closeSheets();
   donor = { base, objects, undoStack, view: { ...view }, sel, mode, wand };
@@ -1306,6 +1465,7 @@ $('openAdd').onclick = () => { openSheet('addSheet'); renderModels(); };
 let outURL = '';
 $('save').onclick = () => {
   if (!base || donor) return;
+  if (bg && bgChanged()) { bgCommit(); bgOpen(); }
   outURL = composite().toDataURL('image/jpeg', .92);
   $('outImg').src = outURL;
   $('sceneName').value = scene.name || defaultName();
@@ -1368,7 +1528,7 @@ $('shareBtn').onclick = async () => {
 
 if (NATIVE) aiInit();
 
-window.__gzState = () => ({ view: { ...view }, count: wand ? wand.count : 0, k: wand ? wand.k : 0, objects: objects.length, scene: { ...scene } });
+window.__gzState = () => ({ view: { ...view }, count: wand ? wand.count : 0, k: wand ? wand.k : 0, objects: objects.length, scene: { ...scene }, size: [base.width, base.height], obj0: objects[0] ? [Math.round(objects[0].cx), Math.round(objects[0].cy)] : null, undo: undoStack.length });
 new ResizeObserver(resize).observe(stage);
 loadCanvas(sample());
 resize();
