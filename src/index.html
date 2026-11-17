@@ -711,46 +711,40 @@ function aiMask(sx, sy) {
     const hi = new Uint8Array(sw * sh), lo = new Uint8Array(sw * sh);
     for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x++) { const i = y * sw + x, v = at(x, y) >= .5; hi[i] = v; lo[i] = !v; }
     out = pickObjectSide(hi, lo, sx, sy);
+    let hiN = 0; for (let i = 0; i < hi.length; i++) hiN += hi[i];
+    window.__aiDebug = { masks: ms.length, mw, mh, vTap: at(sx, sy), hiFrac: hiN / hi.length, picked: window.__aiPicked };
   });
   return out;
 }
-// The model's answer has two sides. The object is the side that is connected to the tap
-// and does not wrap around the photo's edges; the background is the one that does.
+// The model marks the object it found at the tap with high confidence (tested on real photos:
+// the tapped point always scores ~1). Keep the confident part that the tap belongs to.
 function pickObjectSide(a, b, sx, sy) {
-  const { sw, sh } = wand, N = sw * sh, borderN = 2 * (sw + sh);
-  const region = m => {
-    let seed = -1;
-    const t = sy * sw + sx;
-    if (m[t]) seed = t;
-    else { // nearest pixel of this side within a short reach of the tap
-      const R = Math.max(12, Math.round(Math.min(sw, sh) * .04));
-      let best = 1e9;
-      for (let y = Math.max(0, sy - R); y <= Math.min(sh - 1, sy + R); y++)
-        for (let x = Math.max(0, sx - R); x <= Math.min(sw - 1, sx + R); x++) {
-          const d = (x - sx) ** 2 + (y - sy) ** 2; if (m[y * sw + x] && d < best) { best = d; seed = y * sw + x; }
-        }
-    }
-    if (seed < 0) return null;
-    const out = new Uint8Array(N), q = new Int32Array(N); let h = 0, n = 0, border = 0;
-    out[seed] = 1; q[n++] = seed;
-    while (h < n) {
-      const p = q[h++], x = p % sw, y = (p / sw) | 0;
-      if (x === 0 || y === 0 || x === sw - 1 || y === sh - 1) border++;
-      if (x > 0 && m[p - 1] && !out[p - 1]) { out[p - 1] = 1; q[n++] = p - 1; }
-      if (x < sw - 1 && m[p + 1] && !out[p + 1]) { out[p + 1] = 1; q[n++] = p + 1; }
-      if (y > 0 && m[p - sw] && !out[p - sw]) { out[p - sw] = 1; q[n++] = p - sw; }
-      if (y < sh - 1 && m[p + sw] && !out[p + sw]) { out[p + sw] = 1; q[n++] = p + sw; }
-    }
-    return { mask: out, area: n / N, edge: border / borderN, hasTap: seed === t };
-  };
-  const ok = r => r && r.area > .0005 && r.area < .92;
-  const A = region(a), B = region(b), cands = [A, B].filter(ok);
-  if (!cands.length) return null;
-  cands.sort((p, q) =>
-    Math.abs(p.edge - q.edge) > .08 ? p.edge - q.edge        // touches the photo's edges less
-    : p.hasTap !== q.hasTap ? (p.hasTap ? -1 : 1)             // contains the tapped point
-    : p.area - q.area);                                       // the smaller of the two
-  return fillHoles(cands[0].mask, sw, sh);
+  const { sw, sh } = wand, N = sw * sh, t = sy * sw + sx;
+  let seed = a[t] ? t : -1;
+  if (seed < 0) { // tap fell just outside the object's edge: use the nearest object pixel
+    const R = Math.max(16, Math.round(Math.min(sw, sh) * .08));
+    let best = 1e9;
+    for (let y = Math.max(0, sy - R); y <= Math.min(sh - 1, sy + R); y++)
+      for (let x = Math.max(0, sx - R); x <= Math.min(sw - 1, sx + R); x++) {
+        const d = (x - sx) ** 2 + (y - sy) ** 2; if (a[y * sw + x] && d < best) { best = d; seed = y * sw + x; }
+      }
+  }
+  window.__aiPicked = seed === t ? 'hi' : seed >= 0 ? 'hi-near' : 'none';
+  if (seed < 0) return null;
+  const out = new Uint8Array(N), q = new Int32Array(N); let h = 0, n = 0;
+  out[seed] = 1; q[n++] = seed;
+  while (h < n) {
+    const p = q[h++], x = p % sw;
+    if (x > 0 && a[p - 1] && !out[p - 1]) { out[p - 1] = 1; q[n++] = p - 1; }
+    if (x < sw - 1 && a[p + 1] && !out[p + 1]) { out[p + 1] = 1; q[n++] = p + 1; }
+    if (p >= sw && a[p - sw] && !out[p - sw]) { out[p - sw] = 1; q[n++] = p - sw; }
+    if (p < N - sw && a[p + sw] && !out[p + sw]) { out[p + sw] = 1; q[n++] = p + sw; }
+  }
+  // small separate pieces the model also marked (e.g. a hand past a gap) belong to it too
+  for (let i = 0; i < N; i++) if (a[i] && !out[i]) out[i] = 2;
+  const kept = keepMain(out.map(v => v ? 1 : 0), sw, sh);
+  for (let i = 0; i < N; i++) out[i] = out[i] === 1 || (out[i] === 2 && kept[i]) ? 1 : 0;
+  return fillHoles(out, sw, sh);
 }
 function wandGrow(sx, sy, tol) {
   const { sw, sh, px } = wand, out = new Uint8Array(sw * sh);
@@ -1528,7 +1522,7 @@ $('shareBtn').onclick = async () => {
 
 if (NATIVE) aiInit();
 
-window.__gzState = () => ({ view: { ...view }, count: wand ? wand.count : 0, k: wand ? wand.k : 0, objects: objects.length, scene: { ...scene }, size: [base.width, base.height], obj0: objects[0] ? [Math.round(objects[0].cx), Math.round(objects[0].cy)] : null, undo: undoStack.length });
+window.__gzState = () => ({ view: { ...view }, count: wand ? wand.count : 0, k: wand ? wand.k : 0, objects: objects.length, scene: { ...scene }, size: [base.width, base.height], obj0: objects[0] ? [Math.round(objects[0].cx), Math.round(objects[0].cy)] : null, undo: undoStack.length, ai: ai.state });
 new ResizeObserver(resize).observe(stage);
 loadCanvas(sample());
 resize();
