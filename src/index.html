@@ -617,8 +617,9 @@ function cutWithMask(mask, x0, y0, x1, y1) {
   const w = x1 - x0, h = y1 - y0;
   if (w < 4 || h < 4) { toast('בחרו אזור בתוך התמונה'); draw(); return false; }
 
+  // cut what the user sees: the photo together with any pieces lying on top of it
   const oc = mk(w, h), og = oc.getContext('2d');
-  og.drawImage(base, -x0, -y0);
+  og.drawImage(objects.length && !donor ? composite() : base, -x0, -y0);
   og.globalCompositeOperation = 'destination-in'; og.drawImage(mask, -x0, -y0);
   const alpha = og.getImageData(0, 0, w, h).data;
 
@@ -626,6 +627,12 @@ function cutWithMask(mask, x0, y0, x1, y1) {
   if (donor) { donorFinish({ cv: oc, w, h, alpha }); return true; }
 
   pushUndo();
+  // those pixels now belong to the new piece: remove them from older pieces (empty ones go away)
+  if (objects.length) {
+    const before = objects.length;
+    objects = objects.map(o => eraseFromPiece(o, mask, x0, y0, x1, y1)).filter(Boolean);
+    if (objects.length < before) sel = null;
+  }
   if ($('fill').checked) {
     // patch: average of the texture found one object-width away on each side
     const offs = [[w + 4, 0], [-(w + 4), 0], [0, h + 4], [0, -(h + 4)]]
@@ -656,6 +663,27 @@ function cutWithMask(mask, x0, y0, x1, y1) {
   toast('נגזר! גררו כדי להזיז, צבטו בשתי אצבעות כדי להגדיל');
   draw();
   return true;
+}
+
+// returns the piece with the masked area erased, the same piece if untouched, or null if nothing is left
+function eraseFromPiece(o, mask, x0, y0, x1, y1) {
+  const cs = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => localToWorld(o, a * o.w / 2, b * o.h / 2));
+  const ox0 = Math.min(...cs.map(p => p.x)), ox1 = Math.max(...cs.map(p => p.x));
+  const oy0 = Math.min(...cs.map(p => p.y)), oy1 = Math.max(...cs.map(p => p.y));
+  if (ox1 < x0 || ox0 > x1 || oy1 < y0 || oy0 > y1) return o;
+  const c = mk(o.w, o.h), g = c.getContext('2d');
+  g.drawImage(o.cv, 0, 0);
+  // map photo coordinates into the piece's own pixels (inverse of how it is drawn)
+  g.translate(o.w / 2, o.h / 2); g.scale(1 / (o.scale * o.flip), 1 / o.scale); g.rotate(-o.rot); g.translate(-o.cx, -o.cy);
+  g.globalCompositeOperation = 'destination-out'; g.drawImage(mask, 0, 0);
+  const alpha = g.getImageData(0, 0, o.w, o.h).data;
+  // only faint edge pixels left (what remains along the old outline) means the piece is used up
+  const need = Math.max(40, o.w * o.h * .004);
+  let left = 0; for (let i = 3; i < alpha.length; i += 4) if (alpha[i] > 110 && ++left > need) break;
+  if (left <= need) return null;
+  const n = { ...o, cv: c, alpha };
+  if (sel === o) sel = n;
+  return n;
 }
 
 function edgeColor(alpha, w, h, x0, y0) {
@@ -825,12 +853,6 @@ function wandRebuild() {
   return count / wand.mask.length;
 }
 function wandTap(ip) {
-  const already = !donor && hit(ip);
-  if (already) {
-    sel = already; setMode('move');
-    toast('האובייקט הזה כבר גזור. אפשר להזיז אותו ולשנות לו גודל');
-    return;
-  }
   wandEnsure();
   const sx = Math.floor(ip.x * wand.k), sy = Math.floor(ip.y * wand.k);
   if (sx < 0 || sy < 0 || sx >= wand.sw || sy >= wand.sh) { toast('הקישו בתוך התמונה'); return; }

@@ -45,6 +45,7 @@ const CASES = [
   await p.click('#wCut'); await p.waitForTimeout(500);
   const afterCut = await p.evaluate(() => window.__gzState().objects);
   await p.click('#mWand'); await tap(200, 330); await p.waitForTimeout(1500);
+  await p.click('#wCut'); await p.waitForTimeout(500);
   const re = await p.evaluate(() => ({ objects: window.__gzState().objects, move: document.getElementById('mMove').getAttribute('aria-pressed'), toast: document.getElementById('toast').textContent }));
   // drag the piece aside to see its edges and what was left behind
   await p.evaluate(() => {
