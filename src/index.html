@@ -711,6 +711,8 @@ function aiMask(sx, sy) {
     const hi = new Uint8Array(sw * sh), lo = new Uint8Array(sw * sh);
     for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x++) { const i = y * sw + x, v = at(x, y) >= .5; hi[i] = v; lo[i] = !v; }
     out = pickObjectSide(hi, lo, sx, sy);
+    let hiN = 0; for (let i = 0; i < hi.length; i++) hiN += hi[i];
+    window.__aiDebug = { masks: ms.length, mw, mh, vTap: at(sx, sy), hiFrac: hiN / hi.length, picked: window.__aiPicked };
   });
   return out;
 }
@@ -750,6 +752,7 @@ function pickObjectSide(a, b, sx, sy) {
     Math.abs(p.edge - q.edge) > .08 ? p.edge - q.edge        // touches the photo's edges less
     : p.hasTap !== q.hasTap ? (p.hasTap ? -1 : 1)             // contains the tapped point
     : p.area - q.area);                                       // the smaller of the two
+  window.__aiPicked = cands[0] === A ? 'hi' : 'lo';
   return fillHoles(cands[0].mask, sw, sh);
 }
 function wandGrow(sx, sy, tol) {
@@ -1528,7 +1531,7 @@ $('shareBtn').onclick = async () => {
 
 if (NATIVE) aiInit();
 
-window.__gzState = () => ({ view: { ...view }, count: wand ? wand.count : 0, k: wand ? wand.k : 0, objects: objects.length, scene: { ...scene }, size: [base.width, base.height], obj0: objects[0] ? [Math.round(objects[0].cx), Math.round(objects[0].cy)] : null, undo: undoStack.length });
+window.__gzState = () => ({ view: { ...view }, count: wand ? wand.count : 0, k: wand ? wand.k : 0, objects: objects.length, scene: { ...scene }, size: [base.width, base.height], obj0: objects[0] ? [Math.round(objects[0].cx), Math.round(objects[0].cy)] : null, undo: undoStack.length, ai: ai.state });
 new ResizeObserver(resize).observe(stage);
 loadCanvas(sample());
 resize();

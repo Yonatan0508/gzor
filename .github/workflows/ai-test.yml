@@ -1,0 +1,35 @@
+name: AI selection test
+
+on:
+  push:
+    branches: [ai-test]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run model
+      - run: npm run build
+      - run: npm i --no-save playwright@1.49.1 && npx playwright install --with-deps chromium
+      - name: Run AI test on real photos
+        run: |
+          (cd www && python3 -m http.server 8765 &) && sleep 2
+          node test/ai-test.cjs
+      - name: Publish results
+        run: cd test/out && zip -q ../../ai-results.zip *
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ai-test-${{ github.run_number }}
+          name: AI test ${{ github.run_number }}
+          prerelease: true
+          make_latest: false
+          files: ai-results.zip
