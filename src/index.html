@@ -465,7 +465,7 @@ function area(pts) { let a = 0; for (let i = 0, j = pts.length - 1; i < pts.leng
 function finishLasso() {
   const pts = lasso; lasso = null;
   if (!pts || pts.length < 8 || area(pts) * view.s * view.s < 400) { toast('הקיפו אזור גדול יותר'); draw(); return; }
-  if (!wand || wand.base !== base) wandPrep();
+  wandEnsure();
   let m, how;
   if ($('smartLasso').checked) {
     const r = smartLasso(pts); m = r.m; how = r.how;
@@ -670,14 +670,18 @@ function edgeColor(alpha, w, h, x0, y0) {
 /* ---------- smart tap: grow a region from the tapped pixel by color similarity ---------- */
 const WAND_SIDE = 1024;
 let wand = null; // { k, sw, sh, px, img, seeds:[[x,y] | {m}], mask:Uint8Array, tint:canvas }
+// Selection works on what the user sees: the photo with the pieces already cut on top of it.
+const wandSig = () => objects.map(o => [o.id, o.cx | 0, o.cy | 0, o.scale.toFixed(3), o.rot.toFixed(3), o.flip].join()).join('|');
 function wandPrep() {
   const k = Math.min(1, WAND_SIDE / Math.max(base.width, base.height));
   const sw = Math.max(1, Math.round(base.width * k)), sh = Math.max(1, Math.round(base.height * k));
-  const img = mk(sw, sh); img.getContext('2d').drawImage(base, 0, 0, sw, sh);
+  const view = objects.length ? composite() : base;
+  const img = mk(sw, sh), ig = img.getContext('2d'); ig.imageSmoothingQuality = 'high'; ig.drawImage(view, 0, 0, sw, sh);
   const c = mk(sw, sh), g = c.getContext('2d');
-  g.filter = 'blur(1px)'; g.drawImage(base, 0, 0, sw, sh); g.filter = 'none';
-  wand = { k, sw, sh, base, img, px: g.getImageData(0, 0, sw, sh).data, seeds: [], mask: new Uint8Array(sw * sh), tint: mk(sw, sh) };
+  g.filter = 'blur(1px)'; g.drawImage(view, 0, 0, sw, sh); g.filter = 'none';
+  wand = { k, sw, sh, base, sig: wandSig(), img, px: g.getImageData(0, 0, sw, sh).data, seeds: [], mask: new Uint8Array(sw * sh), tint: mk(sw, sh) };
 }
+function wandEnsure() { if (!wand || wand.base !== base || wand.sig !== wandSig()) wandPrep(); }
 
 /* ---------- on-device AI (MediaPipe Interactive Segmenter), available inside the phone app ---------- */
 const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
@@ -707,7 +711,13 @@ function aiMask(sx, sy) {
     const ms = res.confidenceMasks; if (!ms || !ms.length) return;
     const m = ms[ms.length - 1];
     const f = m.getAsFloat32Array(), mw = m.width, mh = m.height;
-    const at = (x, y) => f[Math.min(mh - 1, (y * mh / sh) | 0) * mw + Math.min(mw - 1, (x * mw / sw) | 0)];
+    const at = (x, y) => { // bilinear, so the outline is smooth instead of stair-stepped
+      let fx = (x + .5) * mw / sw - .5, fy = (y + .5) * mh / sh - .5;
+      fx = Math.max(0, Math.min(mw - 1, fx)); fy = Math.max(0, Math.min(mh - 1, fy));
+      const x0 = fx | 0, y0 = fy | 0, x1 = Math.min(mw - 1, x0 + 1), y1 = Math.min(mh - 1, y0 + 1), ax = fx - x0, ay = fy - y0;
+      const top = f[y0 * mw + x0] * (1 - ax) + f[y0 * mw + x1] * ax, bot = f[y1 * mw + x0] * (1 - ax) + f[y1 * mw + x1] * ax;
+      return top * (1 - ay) + bot * ay;
+    };
     const hi = new Uint8Array(sw * sh), lo = new Uint8Array(sw * sh);
     for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x++) { const i = y * sw + x, v = at(x, y) >= .5; hi[i] = v; lo[i] = !v; }
     out = pickObjectSide(hi, lo, sx, sy);
@@ -815,7 +825,13 @@ function wandRebuild() {
   return count / wand.mask.length;
 }
 function wandTap(ip) {
-  if (!wand || wand.base !== base) wandPrep();
+  const already = !donor && hit(ip);
+  if (already) {
+    sel = already; setMode('move');
+    toast('האובייקט הזה כבר גזור. אפשר להזיז אותו ולשנות לו גודל');
+    return;
+  }
+  wandEnsure();
   const sx = Math.floor(ip.x * wand.k), sy = Math.floor(ip.y * wand.k);
   if (sx < 0 || sy < 0 || sx >= wand.sw || sy >= wand.sh) { toast('הקישו בתוך התמונה'); return; }
   if (ai.state === 'loading' || ai.state === 'idle') { aiInit(); toast('ה-AI עדיין נטען, נסו שוב בעוד רגע'); return; }
@@ -835,7 +851,7 @@ function wandUndo() { if (wand && wand.seeds.length) { wand.seeds.pop(); wandReb
 /* brush: paint extra areas into the selection, or erase them out of it */
 let wandTool = 'tap';
 function brushStart(ip) {
-  if (!wand || wand.base !== base) wandPrep();
+  wandEnsure();
   const sc = mk(wand.sw, wand.sh), g = sc.getContext('2d');
   const r = Math.max(1, +$('bsz').value / view.s * wand.k);
   g.lineCap = g.lineJoin = 'round'; g.lineWidth = r * 2; g.strokeStyle = g.fillStyle = '#fff';
@@ -1108,7 +1124,7 @@ function updateSliders() {
   const pct = Math.round(sel.scale * 100), deg = Math.round(((sel.rot * 180 / Math.PI + 540) % 360) - 180);
   $('sz').value = Math.min(400, Math.max(10, pct)); $('szOut').textContent = pct + '%';
   $('rot').value = deg; $('rotOut').textContent = deg + '°';
-  $('objSize').textContent = `${Math.round(sel.w * sel.scale)}×${Math.round(sel.h * sel.scale)} פיקסלים`;
+  $('objSize').textContent = `\u2066${Math.round(sel.w * sel.scale)}×${Math.round(sel.h * sel.scale)}\u2069 פיקסלים`;
 }
 function updateUI() {
   const showObj = mode === 'move' && !!sel;
