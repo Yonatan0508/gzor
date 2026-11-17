@@ -23,6 +23,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+          cache: gradle
 
       - name: Android SDK (preinstalled on the runner)
         run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties && ls $ANDROID_HOME
@@ -40,7 +41,7 @@ jobs:
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon || (sleep 60 && ./gradlew assembleDebug --no-daemon)
 
       - name: Collect APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk gzor.apk
