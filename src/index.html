@@ -678,7 +678,9 @@ function eraseFromPiece(o, mask, x0, y0, x1, y1) {
   g.globalCompositeOperation = 'destination-out'; g.drawImage(mask, 0, 0);
   const alpha = g.getImageData(0, 0, o.w, o.h).data;
   // only faint edge pixels left (what remains along the old outline) means the piece is used up
-  const need = Math.max(40, o.w * o.h * .004);
+  // and so does a piece with only slivers left: under 5% of what it had
+  let had = 0; for (let i = 3; i < o.alpha.length; i += 4) if (o.alpha[i] > 110) had++;
+  const need = Math.max(40, o.w * o.h * .004, had * .05);
   let left = 0; for (let i = 3; i < alpha.length; i += 4) if (alpha[i] > 110 && ++left > need) break;
   if (left <= need) return null;
   const n = { ...o, cv: c, alpha };
